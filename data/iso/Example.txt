@@ -1,0 +1,15 @@
+English,en
+French,fr
+German,de
+Spanish,es
+Italian,it
+Portuguese,pt
+Hindi,hi
+Japanese,ja
+Korean,ko
+Russian,ru
+Thai,th
+Malay,ms
+ChineseSimplified,zh-CN
+ChineseHK,zh-TW
+Vietnamese,vi

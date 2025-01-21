@@ -1,0 +1,36 @@
+﻿using LocalizationTranslationWPF.DictConverter;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using static LocalizationTranslationWPF.Data.Config;
+
+namespace LocalizationTranslationWPF.Helper
+{
+    public class ToolTipHelper
+    {
+        private static Dictionary<string, string> SampleDict = new Dictionary<string, string>()
+        {
+            {"key1","value1" },
+            {"key2","value2" },
+        };
+        public static string DictConverterToolTip
+        {
+            get
+            {
+                var converter = DictConverterHelper.GetConverterInstance(ConfigHelper.DictConverter.Value);
+                if (converter == null)
+                {
+                    return "无法找到转换器";
+                }
+                return $"示例：\n{converter.Serialize(SampleDict)}";
+            }
+        }
+
+        public static string WebDriverToolTip => $"选择浏览器驱动程序，通常只需要最新版的浏览器即可，如果无法正常启动，请下载对应\"WebDriver\"到{PathHelper.DriverPath}";
+        public static string IsoPairToolTip => "示例：\nEnglish,en\nChineseSimplified,zh-CN\n该配置文件为输出/入文件名与ISO对应表";
+        public static string SourceLangToolTip => $"将以{PathHelper.InputPath}\\{ConfigHelper.SourceLang.Name}.json 为翻译源";
+        public static string TargetLangToolTip => $"翻译后的文件将输出到{PathHelper.OutputPath}";
+    }
+}

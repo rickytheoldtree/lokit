@@ -1,0 +1,33 @@
+﻿<Window x:Class="LocalizationTranslationWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LocalizationTranslationWPF"
+        mc:Ignorable="d"
+        Title="翻译工具 - LYQ" Height="440" Width="545" ResizeMode="NoResize" Topmost="True">
+    <Grid>
+        <Button x:Name="btnStart" Content="开始" Margin="0,41,45,0" VerticalAlignment="Top" Width="166" Height="23" Click="btnStart_Click" HorizontalAlignment="Right"/>
+        <ComboBox x:Name="webDriveComboBox" HorizontalAlignment="Left" Margin="108,41,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="webDriveComboBox_SelectionChanged"/>
+        <ComboBox x:Name="dictConverterComboBox" HorizontalAlignment="Left" Margin="108,71,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="dictConverterComboBox_SelectionChanged" DisplayMemberPath="Name"/>
+        <Label x:Name="label" Content="浏览器工具" HorizontalAlignment="Left" Margin="27,39,0,0" VerticalAlignment="Top" AutomationProperties.HelpText=""/>
+        <Label x:Name="label1" Content="Json格式" HorizontalAlignment="Left" Margin="38,69,0,0" VerticalAlignment="Top"/>
+        <ComboBox x:Name="isoPairComboBox" HorizontalAlignment="Left" Margin="108,103,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="isoPairComboBox_SelectionChanged" DisplayMemberPath="Key"/>
+        <Label x:Name="label2" Content="文件名-ISO" HorizontalAlignment="Left" Margin="26,99,0,0" VerticalAlignment="Top"/>
+        <ComboBox x:Name="sourceLangComboBox" HorizontalAlignment="Left" Margin="108,133,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="sourceLangComboBox_SelectionChanged" DisplayMemberPath="Name"/>
+        <Label x:Name="label3" Content="翻译源语言" HorizontalAlignment="Left" Margin="27,129,0,0" VerticalAlignment="Top"/>
+        <ComboBox x:Name="targetLangComboBox" HorizontalAlignment="Left" Margin="108,163,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="targetLangComboBox_SelectionChanged" DisplayMemberPath="Name"/>
+        <Label x:Name="label4" Content="目标语言" HorizontalAlignment="Left" Margin="39,159,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnOpenInput" Content="语言源文件夹" HorizontalAlignment="Right" Margin="0,129,45,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenInput_Click"/>
+        <Button x:Name="btnOpenOutput" Content="输出文件夹" HorizontalAlignment="Right" Margin="0,159,45,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenOutput_Click"/>
+        <Button x:Name="btnOpenISO" Content="语言ISO文件夹" HorizontalAlignment="Right" Margin="0,99,45,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenISO_Click"/>
+        <RichTextBox x:Name="logBox" Margin="45,279,45,19" Background="Black" IsReadOnly="True" IsUndoEnabled="False"/>
+        <Button x:Name="btnDictConverter" Content="格式配置文件夹" HorizontalAlignment="Right" Margin="0,69,45,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnDictConverter_Click"/>
+        <Button x:Name="btnOpenDriversFolder" Content="驱动文件夹" HorizontalAlignment="Right" Margin="0,189,45,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenDriversFolder_Click"/>
+        <Button x:Name="btnSimplified2Traditional" Content="简=&gt;繁" HorizontalAlignment="Right" Margin="0,219,273,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnSimplified2Traditional_Click"/>
+        <Button x:Name="btnCombine" Content="合并" HorizontalAlignment="Right" Margin="0,249,273,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnCombine_Click"/>
+        <Button x:Name="btnOpenCombineSourceFolder" Content="合并源文件夹" HorizontalAlignment="Right" Margin="0,219,45,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenCombineSourceFolder_Click"/>
+        <Button x:Name="btnOpenCombineOutputFolder" Content="合并输出文件夹" HorizontalAlignment="Right" Margin="0,249,45,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenCombineOutputFolder_Click"/>
+
+    </Grid>
+</Window>
