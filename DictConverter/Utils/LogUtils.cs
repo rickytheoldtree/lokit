@@ -4,9 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-namespace LocalizationTranslationWPF.Helper
+namespace LocalizationTranslationWPF.Utils
 {
-    public class LogHelper
+    public class LogUtils
     {
         private static void UseLogBox(Action<RichTextBox> action)
         {

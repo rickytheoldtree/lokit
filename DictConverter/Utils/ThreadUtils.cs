@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LocalizationTranslationWPF.Helper
+namespace LocalizationTranslationWPF.Utils
 {
-    public static class ThreadHelper
+    public static class ThreadUtils
     {
         /// <summary>
         /// 复制文本到剪切板

@@ -15,5 +15,10 @@ namespace LocalizationTranslationWPF.Data
         }
         public string Name { get; }
         public string isoCode;
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

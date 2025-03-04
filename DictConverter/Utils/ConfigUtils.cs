@@ -6,9 +6,9 @@ using System;
 using System.IO;
 using static LocalizationTranslationWPF.Data.Config;
 
-namespace LocalizationTranslationWPF.Helper
+namespace LocalizationTranslationWPF.Utils
 {
-    public static class ConfigHelper
+    public static class ConfigUtils
     {
         public static Config Config => config ??= Load();
         private static Config? config;
@@ -19,7 +19,7 @@ namespace LocalizationTranslationWPF.Helper
         });
 
         public static EventProperty<Type> DictConverter { get; }
-            = new EventProperty<Type>(DictConverterHelper.GetConverterType(Config.dictConverter.type), type =>
+            = new EventProperty<Type>(DictConverterUtils.GetConverterType(Config.dictConverter.type), type =>
             {
                 Config.dictConverter = new DictConverterType(type);
                 Save();
@@ -31,25 +31,25 @@ namespace LocalizationTranslationWPF.Helper
         });
         public static EventProperty<int> SourceLangIndex { get; } = new EventProperty<int>(0, index =>
         {
-            SourceLang = PairHelper.GetPairs(IsoPairIndex.Value)[index];
+            SourceLang = PairUtils.GetPairs(IsoPairIndex.Value)[index];
         });
         public static EventProperty<int> TargetLangIndex { get; } = new EventProperty<int>(0, index =>
         {
-            TargetLang = PairHelper.GetPairsWithAll(IsoPairIndex.Value)[index];
+            TargetLang = PairUtils.GetPairsWithAll(IsoPairIndex.Value)[index];
         });
         public static Pair SourceLang { get; private set; }
         public static Pair TargetLang { get; private set; }
         private static void Save()
         {
-            File.WriteAllText(PathHelper.ConfigPath, JsonConvert.SerializeObject(Config));
+            File.WriteAllText(PathUtils.ConfigPath, JsonConvert.SerializeObject(Config));
         }
         private static Config Load()
         {
-            if (File.Exists(PathHelper.ConfigPath))
+            if (File.Exists(PathUtils.ConfigPath))
             {
                 try
                 {
-                    var config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(PathHelper.ConfigPath));
+                    var config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(PathUtils.ConfigPath));
                     return config ?? new Config();
                 }
                 catch (Exception)

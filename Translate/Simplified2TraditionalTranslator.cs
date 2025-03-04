@@ -1,4 +1,4 @@
-﻿using LocalizationTranslationWPF.Helper;
+﻿using LocalizationTranslationWPF.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,13 +10,13 @@ namespace LocalizationTranslationWPF.Translate
     {
         internal static void Translate()
         {
-            var sourceLang = ConfigHelper.SourceLang;
-            var targetLang = ConfigHelper.TargetLang;
-            var sourcePath = PathHelper.InputPath + "\\" + sourceLang.Name + ".json";
-            var targetPath = PathHelper.OutputPath + "\\" + targetLang.Name + ".json";
+            var sourceLang = ConfigUtils.SourceLang;
+            var targetLang = ConfigUtils.TargetLang;
+            var sourcePath = PathUtils.InputPath + "\\" + sourceLang.Name + ".json";
+            var targetPath = PathUtils.OutputPath + "\\" + targetLang.Name + ".json";
             if (!File.Exists(sourcePath))
             {
-                LogHelper.LogError($"{sourcePath}不存在");
+                LogUtils.LogError($"{sourcePath}不存在");
                 return;
             }
             var sourceJson = File.ReadAllText(sourcePath);
@@ -24,11 +24,11 @@ namespace LocalizationTranslationWPF.Translate
             {
                 sourceJson = ChineseConverter.Convert(sourceJson, ChineseConversionDirection.SimplifiedToTraditional);
                 File.WriteAllText(targetPath, sourceJson);
-                LogHelper.Log($"翻译{sourceLang.Name}到{targetLang.Name}成功");
+                LogUtils.Log($"翻译{sourceLang.Name}到{targetLang.Name}成功");
             }
             catch(Exception e)
             {
-                LogHelper.LogError(e.Message);
+                LogUtils.LogError(e.Message);
             }
         }
     }

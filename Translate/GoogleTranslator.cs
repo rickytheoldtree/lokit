@@ -1,5 +1,5 @@
 ﻿using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.Helper;
+using LocalizationTranslationWPF.Utils;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
@@ -38,13 +38,13 @@ namespace LocalizationTranslationWPF.Translate
             {
                 default:
                 case Config.WebDriverType.Edge:
-                    webDriver = new EdgeDriver(PathHelper.DriverPath);
+                    webDriver = new EdgeDriver(PathUtils.DriverPath);
                     break;
                 case Config.WebDriverType.Chrome:
-                    webDriver = new ChromeDriver(PathHelper.DriverPath);
+                    webDriver = new ChromeDriver(PathUtils.DriverPath);
                     break;
                 case Config.WebDriverType.FireFox:
-                    webDriver = new FirefoxDriver(PathHelper.DriverPath);
+                    webDriver = new FirefoxDriver(PathUtils.DriverPath);
                     break;
             }
         }
@@ -60,7 +60,7 @@ namespace LocalizationTranslationWPF.Translate
             }
             catch (Exception e)
             {
-                LogHelper.LogError(e.Message);
+                LogUtils.LogError(e.Message);
                 return false;
             }
             //每隔1秒尝试1次获取翻译结果，最多尝试10次
@@ -83,7 +83,7 @@ namespace LocalizationTranslationWPF.Translate
                 {
                     if(e is NoSuchWindowException)
                     {
-                        LogHelper.LogError(e.Message);
+                        LogUtils.LogError(e.Message);
                         return false;
                     }
                 }
@@ -98,8 +98,8 @@ namespace LocalizationTranslationWPF.Translate
             }
             await Task.Delay(1000);
             //访问Windows粘贴板
-            var text = ThreadHelper.GetClipboard();
-            if (!TaskHelper.Txt2StrList(text, out var values))
+            var text = ThreadUtils.GetClipboard();
+            if (!TaskUtils.Txt2StrList(text, out var values))
             {
                 return false;
             }

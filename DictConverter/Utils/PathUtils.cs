@@ -5,14 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LocalizationTranslationWPF.Helper
+namespace LocalizationTranslationWPF.Utils
 {
-    public static class PathHelper
+    public static class PathUtils
     {
         public const string ConfigPath = "config.json";
         public const string InputPath = "data\\input";
         public const string OutputPath = "data\\output";
         public const string IsoPath = "data\\iso";
+        public const string EditPath = "data\\edit";
         public const string DriverPath = "web-drivers";
         public const string DictConverterDllPath = "converters";
         public const string CombineSourcePath = "data\\combine_source";
@@ -45,6 +46,10 @@ namespace LocalizationTranslationWPF.Helper
             {
                 Directory.CreateDirectory(CombineOutputPath);
             }
+            if (!Directory.Exists(EditPath))
+            {
+                Directory.CreateDirectory(EditPath);
+            }
         }
         public static void OpenOutputFolder()
         {
@@ -76,6 +81,11 @@ namespace LocalizationTranslationWPF.Helper
         internal static void OpenCombineOutputFolder()
         {
             System.Diagnostics.Process.Start("explorer.exe", CombineOutputPath);
+        }
+
+        internal static void OpenEditorFolder()
+        {
+            System.Diagnostics.Process.Start("explorer.exe", EditPath);
         }
     }
 }

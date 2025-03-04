@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace LocalizationTranslationWPF.Helper
+namespace LocalizationTranslationWPF.Utils
 {
-    public static class PairHelper
+    public static class PairUtils
     {
         private static readonly List<Pair> fallBackList = new()
         {
@@ -35,7 +35,7 @@ namespace LocalizationTranslationWPF.Helper
         private static Dictionary<string, List<Pair>> LoadAll()
         {
             var dict = new Dictionary<string, List<Pair>>();
-            var path = PathHelper.IsoPath;
+            var path = PathUtils.IsoPath;
             //遍历path下的所有文件
             var files = System.IO.Directory.GetFiles(path);
             foreach (var file in files)

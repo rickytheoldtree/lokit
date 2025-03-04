@@ -7,7 +7,8 @@ using System.Windows.Controls;
 using LocalizationTranslationWPF.Data;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using LocalizationTranslationWPF.Helper;
+using LocalizationTranslationWPF.Utils;
+using LocalizationTranslationWPF.Editor;
 
 namespace LocalizationTranslationWPF
 {
@@ -28,25 +29,25 @@ namespace LocalizationTranslationWPF
         }
         private void Init()
         {
-            PathHelper.MakeSureFolderExist();
+            PathUtils.MakeSureFolderExist();
             webDriveComboBox.ItemsSource = Enum.GetValues(typeof(Config.WebDriverType)).Cast<Config.WebDriverType>();
-            webDriveComboBox.SelectedIndex = (int)ConfigHelper.WebDriver.Value;
+            webDriveComboBox.SelectedIndex = (int)ConfigUtils.WebDriver.Value;
             ToolTipService.SetInitialShowDelay(webDriveComboBox, 0);
 
-            dictConverterComboBox.ItemsSource = DictConverterHelper.Converters;
-            dictConverterComboBox.SelectedItem = new DictConverterType(ConfigHelper.DictConverter.Value);
+            dictConverterComboBox.ItemsSource = DictConverterUtils.Converters;
+            dictConverterComboBox.SelectedItem = new DictConverterType(ConfigUtils.DictConverter.Value);
             ToolTipService.SetInitialShowDelay(dictConverterComboBox, 0);
 
-            isoPairComboBox.ItemsSource = PairHelper.PairsCache;
-            isoPairComboBox.SelectedIndex = ConfigHelper.IsoPairIndex.Value > PairHelper.PairsCache.Count - 1 ? 0 : ConfigHelper.IsoPairIndex.Value;
+            isoPairComboBox.ItemsSource = PairUtils.PairsCache;
+            isoPairComboBox.SelectedIndex = ConfigUtils.IsoPairIndex.Value > PairUtils.PairsCache.Count - 1 ? 0 : ConfigUtils.IsoPairIndex.Value;
             ToolTipService.SetInitialShowDelay(isoPairComboBox, 0);
 
-            sourceLangComboBox.ItemsSource = PairHelper.GetPairs(ConfigHelper.IsoPairIndex.Value);
-            sourceLangComboBox.SelectedIndex = ConfigHelper.SourceLangIndex.Value;
+            sourceLangComboBox.ItemsSource = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+            sourceLangComboBox.SelectedIndex = ConfigUtils.SourceLangIndex.Value;
             ToolTipService.SetInitialShowDelay(sourceLangComboBox, 0);
 
-            targetLangComboBox.ItemsSource = PairHelper.GetPairsWithAll(ConfigHelper.IsoPairIndex.Value);
-            targetLangComboBox.SelectedIndex = ConfigHelper.TargetLangIndex.Value;
+            targetLangComboBox.ItemsSource = PairUtils.GetPairsWithAll(ConfigUtils.IsoPairIndex.Value);
+            targetLangComboBox.SelectedIndex = ConfigUtils.TargetLangIndex.Value;
             ToolTipService.SetInitialShowDelay(targetLangComboBox, 0);
         }
         private async void btnStart_Click(object sender, RoutedEventArgs e)
@@ -59,88 +60,95 @@ namespace LocalizationTranslationWPF
         {
             await Task.Run( async () =>
             {
-                var dictConverter = DictConverterHelper.GetConverterInstance(ConfigHelper.DictConverter.Value);
+                var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if(dictConverter == null)
                 {
-                    LogHelper.LogError("字典转换器类型错误");
+                    LogUtils.LogError("字典转换器类型错误");
                     return;
                 }
-                var sourceLang = ConfigHelper.SourceLang;
-                var targetLang = ConfigHelper.TargetLang;
+                var sourceLang = ConfigUtils.SourceLang;
+                var targetLang = ConfigUtils.TargetLang;
                 if (targetLang.Name == "All")
                 {
-                    foreach (var pair in PairHelper.GetPairs(ConfigHelper.IsoPairIndex.Value))
+                    foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
                     {
                         targetLang = pair;
-                        if (!await TaskHelper.TranslateTask(sourceLang, targetLang, dictConverter))
+                        if (!await TaskUtils.TranslateTask(sourceLang, targetLang, dictConverter))
                         {
-                            LogHelper.LogError($"翻译{targetLang.Name}失败");
+                            LogUtils.LogError($"翻译{targetLang.Name}失败");
                             continue;
                         }
                     }
                 }
                 else
                 {
-                    await TaskHelper.TranslateTask(sourceLang, targetLang, dictConverter);
+                    await TaskUtils.TranslateTask(sourceLang, targetLang, dictConverter);
                 }
                 GoogleTranslator.Close();
             });
         } 
         private void webDriveComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ConfigHelper.WebDriver.Value = (Config.WebDriverType)webDriveComboBox.SelectedIndex;
-            webDriveComboBox.ToolTip = ToolTipHelper.WebDriverToolTip;
+            if (e.Source != webDriveComboBox) return;
+            if (webDriveComboBox.SelectedIndex == -1) return;
+
+            ConfigUtils.WebDriver.Value = (Config.WebDriverType)webDriveComboBox.SelectedIndex;
+            webDriveComboBox.ToolTip = ToolTipUtils.WebDriverToolTip;
         }
 
         private void dictConverterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ConfigHelper.DictConverter.Value = DictConverterHelper.GetConverterType(((DictConverterType)dictConverterComboBox.SelectedItem).type);
-            dictConverterComboBox.ToolTip = ToolTipHelper.DictConverterToolTip;
+            if (e.Source != dictConverterComboBox) return;
+            if (dictConverterComboBox.SelectedIndex == -1) return;
+
+            ConfigUtils.DictConverter.Value = DictConverterUtils.GetConverterType(((DictConverterType)dictConverterComboBox.SelectedItem).type);
+            dictConverterComboBox.ToolTip = ToolTipUtils.DictConverterToolTip;
         }
 
         private void isoPairComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ConfigHelper.IsoPairIndex.Value = isoPairComboBox.SelectedIndex;
-            sourceLangComboBox.ItemsSource = PairHelper.GetPairs(isoPairComboBox.SelectedIndex);
+            if (e.Source != isoPairComboBox) return;
+            if (isoPairComboBox.SelectedIndex == -1) return;
+
+            ConfigUtils.IsoPairIndex.Value = isoPairComboBox.SelectedIndex;
+            sourceLangComboBox.ItemsSource = PairUtils.GetPairs(isoPairComboBox.SelectedIndex);
             sourceLangComboBox.SelectedIndex = 0;
-            targetLangComboBox.ItemsSource = PairHelper.GetPairsWithAll(isoPairComboBox.SelectedIndex);
+            targetLangComboBox.ItemsSource = PairUtils.GetPairsWithAll(isoPairComboBox.SelectedIndex);
             targetLangComboBox.SelectedIndex = 0;
-            isoPairComboBox.ToolTip = ToolTipHelper.IsoPairToolTip;
+            isoPairComboBox.ToolTip = ToolTipUtils.IsoPairToolTip;
         }
 
         private void sourceLangComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(sourceLangComboBox.SelectedIndex == -1)
-            {
-                return;
-            }
-            ConfigHelper.SourceLangIndex.Value = sourceLangComboBox.SelectedIndex;
-            sourceLangComboBox.ToolTip = ToolTipHelper.SourceLangToolTip;
+            if (e.Source != sourceLangComboBox) return;
+            if (sourceLangComboBox.SelectedIndex == -1) return;
+            
+            ConfigUtils.SourceLangIndex.Value = sourceLangComboBox.SelectedIndex;
+            sourceLangComboBox.ToolTip = ToolTipUtils.SourceLangToolTip;
         }
 
         private void targetLangComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (targetLangComboBox.SelectedIndex == -1)
-            {
-                return;
-            }
-            ConfigHelper.TargetLangIndex.Value = targetLangComboBox.SelectedIndex;
-            targetLangComboBox.ToolTip = ToolTipHelper.TargetLangToolTip;
+            if (e.Source != targetLangComboBox) return;
+            if (targetLangComboBox.SelectedIndex == -1) return;
+
+            ConfigUtils.TargetLangIndex.Value = targetLangComboBox.SelectedIndex;
+            targetLangComboBox.ToolTip = ToolTipUtils.TargetLangToolTip;
         }
 
         private void btnOpenInput_Click(object sender, RoutedEventArgs e)
         {
-            PathHelper.OpenInputFolder();
+            PathUtils.OpenInputFolder();
         }
 
         private void btnOpenOutput_Click(object sender, RoutedEventArgs e)
         {
-            PathHelper.OpenOutputFolder();
+            PathUtils.OpenOutputFolder();
         }
 
         private void btnOpenISO_Click(object sender, RoutedEventArgs e)
         {
-            PathHelper.OpenIsoFolder();
+            PathUtils.OpenIsoFolder();
         }
         private void LockUI()
         {
@@ -150,6 +158,7 @@ namespace LocalizationTranslationWPF
             isoPairComboBox.IsEnabled = false;
             sourceLangComboBox.IsEnabled = false;
             targetLangComboBox.IsEnabled = false;
+            tabControl.IsEnabled = false;
         }
         private void UnlockUI()
         {
@@ -159,11 +168,12 @@ namespace LocalizationTranslationWPF
             isoPairComboBox.IsEnabled = true;
             sourceLangComboBox.IsEnabled = true;
             targetLangComboBox.IsEnabled = true;
+            tabControl.IsEnabled = true;
         }
 
         private void btnDictConverter_Click(object sender, RoutedEventArgs e)
         {
-            PathHelper.OpenDictConverterFolder();
+            PathUtils.OpenDictConverterFolder();
         }
 
         private void btnSimplified2Traditional_Click(object sender, RoutedEventArgs e)
@@ -173,22 +183,22 @@ namespace LocalizationTranslationWPF
 
         private void btnOpenDriversFolder_Click(object sender, RoutedEventArgs e)
         {
-            PathHelper.OpenDriversFolder();
+            PathUtils.OpenDriversFolder();
         }
 
         private void btnCombine_Click(object sender, RoutedEventArgs e)
         {
-            var list = PairHelper.GetPairs(ConfigHelper.IsoPairIndex.Value);
+            var list = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
             if (list.Count == 0)
             {
-                LogHelper.LogError("未找到任何语言对");
+                LogUtils.LogError("未找到任何语言对");
                 return;
             }
             foreach (var pair in list)
             {
-                if (!TaskHelper.CombineTask(pair))
+                if (!TaskUtils.CombineTask(pair))
                 {
-                    LogHelper.LogError($"合并{pair.Name}失败");
+                    LogUtils.LogError($"合并{pair.Name}失败");
                     continue;
                 }
             }
@@ -196,12 +206,44 @@ namespace LocalizationTranslationWPF
 
         private void btnOpenCombineSourceFolder_Click(object sender, RoutedEventArgs e)
         {
-            PathHelper.OpenCombineSourceFolder();
+            PathUtils.OpenCombineSourceFolder();
         }
 
         private void btnOpenCombineOutputFolder_Click(object sender, RoutedEventArgs e)
         {
-            PathHelper.OpenCombineOutputFolder();
+            PathUtils.OpenCombineOutputFolder();
+        }
+
+        private void comboBoxEditorTargetLanguage_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.Source != comboBoxEditorTargetLanguage) return;
+            if (comboBoxEditorTargetLanguage.SelectedIndex == -1) return;
+            EditorUtils.UpdateGrid((Pair)comboBoxEditorTargetLanguage.SelectedItem);
+        }
+
+        private void tabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(e.Source != tabControl) return;
+            if (tabControl.SelectedIndex != 1) return;
+            var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+            EditorUtils.Init(dataGrid, pairs);
+            comboBoxEditorTargetLanguage.ItemsSource = pairs;
+            comboBoxEditorTargetLanguage.SelectedIndex = 0;
+        }
+
+        private void btnEditorSave_Click(object sender, RoutedEventArgs e)
+        {
+            EditorUtils.Save();
+        }
+
+        private void btnEditorDeleteKey_Click(object sender, RoutedEventArgs e)
+        {
+            EditorUtils.DeleteKey();
+        }
+
+        private void btnOpenEditorFolder_Click(object sender, RoutedEventArgs e)
+        {
+            PathUtils.OpenEditorFolder();
         }
     }
 }

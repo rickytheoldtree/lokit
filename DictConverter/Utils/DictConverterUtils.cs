@@ -1,5 +1,5 @@
 ﻿using DictConverter;
-using LocalizationTranslationWPF.Helper;
+using LocalizationTranslationWPF.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +7,9 @@ using System.Reflection;
 
 namespace LocalizationTranslationWPF.DictConverter
 {
-    public static class DictConverterHelper
+    public static class DictConverterUtils
     {
-        private static string DllPath => PathHelper.DictConverterDllPath;
+        private static string DllPath => PathUtils.DictConverterDllPath;
         public static List<DictConverterType> Converters
         {
             get => dictConverterTypes ??= Init();
