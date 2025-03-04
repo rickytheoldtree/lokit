@@ -15,22 +15,27 @@ namespace LocalizationTranslationWPF.Editor
 {
     public static class EditorUtils
     {
-        private static DataGrid DataGrid { get; set; } = new DataGrid();
-        private static Dictionary<string, string> dataBase = new Dictionary<string, string>();
-        private static List<Pair> Pairs { get; set; } = new List<Pair>();
+        private static DataGrid? dataGrid;
+        private static Dictionary<string, string>? dataBase;
+        private static List<Pair>? pairs;
         // 新增一个当前编辑的 Pair 记录
         private static Pair CurrentPair { get; set; }
 
         public static void Init(DataGrid dataGrid, List<Pair> pairs)
         {
-            DataGrid = dataGrid;
-            Pairs = pairs;
-            dataBase.Clear();
+            EditorUtils.dataGrid = dataGrid;
+            EditorUtils.pairs = pairs;
+            dataBase?.Clear();
         }
 
         public static void UpdateGrid(Pair pair)
         {
             CurrentPair = pair;
+            if (dataGrid == null || pairs == null)
+            {
+                LogUtils.LogError("未初始化");
+                return;
+            }
             var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
             if (dictConverter == null)
             {
@@ -67,7 +72,7 @@ namespace LocalizationTranslationWPF.Editor
             }
 
             // Finally, bind the DataTable to the DataGrid
-            DataGrid.ItemsSource = dataTable.DefaultView;
+            dataGrid.ItemsSource = dataTable.DefaultView;
         }
 
         /// <summary>
@@ -75,6 +80,12 @@ namespace LocalizationTranslationWPF.Editor
         /// </summary>
         internal static void Save()
         {
+            if (dataGrid == null || pairs == null)
+            {
+                LogUtils.LogError("未初始化");
+                return;
+            }
+
             if (string.IsNullOrEmpty(CurrentPair.Name))
             {
                 LogUtils.LogError("当前没有可保存的Pair");
@@ -88,8 +99,7 @@ namespace LocalizationTranslationWPF.Editor
                 return;
             }
 
-            // 从 DataGrid 获取最新数据（DataGrid.ItemsSource 为 DataView）
-            if (!(DataGrid.ItemsSource is DataView dataView))
+            if (dataGrid.ItemsSource is not DataView dataView)
             {
                 LogUtils.LogError("DataGrid数据源不正确");
                 return;
@@ -98,9 +108,9 @@ namespace LocalizationTranslationWPF.Editor
             var newDataBase = new Dictionary<string, string>();
             foreach (DataRowView rowView in dataView)
             {
-                string key = rowView["Key"]?.ToString();
-                string value = rowView[CurrentPair.Name]?.ToString();
-                if (!string.IsNullOrEmpty(key))
+                string? key = rowView["Key"]?.ToString();
+                string? value = rowView[CurrentPair.Name]?.ToString();
+                if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(value))
                 {
                     newDataBase[key] = value;
                 }
@@ -115,24 +125,32 @@ namespace LocalizationTranslationWPF.Editor
         /// </summary>
         internal static void DeleteKey()
         {
-            // 获取 DataGrid 中选中的行
-            if (DataGrid.SelectedItem == null)
+            if (dataGrid == null || pairs == null)
             {
-                LogUtils.LogError("未选中删除项");
+                LogUtils.LogError("未初始化");
                 return;
             }
 
-            if (!(DataGrid.SelectedItem is DataRowView rowView))
+            if(dataGrid.SelectedItems.Count == 0)
             {
                 LogUtils.LogError("选中项无效");
                 return;
             }
 
-            string keyToDelete = rowView["Key"].ToString();
-            if (string.IsNullOrEmpty(keyToDelete))
+            List<string> keys = new List<string>();
+            foreach(var item  in dataGrid.SelectedItems)
             {
-                LogUtils.LogError("无效的 Key");
-                return;
+                if(item is not DataRowView rowView)
+                {
+                    continue;
+                }
+                string? key = rowView["Key"].ToString();
+                if (string.IsNullOrEmpty(key))
+                {
+                    LogUtils.LogError("无效的 Key");
+                    return;
+                }
+                keys.Add(key);
             }
 
             var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
@@ -142,8 +160,7 @@ namespace LocalizationTranslationWPF.Editor
                 return;
             }
 
-            // 遍历所有 Pair，删除对应 key 并保存
-            foreach (var pair in Pairs)
+            foreach (var pair in pairs)
             {
                 string filePath = $"{PathUtils.EditPath}\\{pair.Name}.json";
                 if (!File.Exists(filePath))
@@ -152,24 +169,22 @@ namespace LocalizationTranslationWPF.Editor
                     continue;
                 }
 
-                // 读取 JSON 文件到字典
-                Dictionary<string, string> dict;
-                if (!TaskUtils.TryInputJson(filePath, dictConverter, out dict) || dict == null)
+                if (!TaskUtils.TryInputJson(filePath, dictConverter, out var dict) || dict == null)
                 {
                     LogUtils.LogError($"读取 {filePath} 失败");
                     continue;
                 }
 
-                // 如果存在则删除 key
-                if (dict.ContainsKey(keyToDelete))
+                foreach(var key in keys)
                 {
-                    dict.Remove(keyToDelete);
+                    if (dict.ContainsKey(key))
+                    {
+                        dict.Remove(key);
+                    }
                 }
-
                 TaskUtils.OutputJson(filePath, dict, dictConverter);
             }
 
-            // 删除后刷新当前 Pair 的 DataGrid 展示
             UpdateGrid(CurrentPair);
         }
     }

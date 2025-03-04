@@ -1,15 +1,13 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LocalizationTranslationWPF.DictConverter
 {
-    public class HhjConverter : IDictConverter.IDictConverter
+    public class ExampleAdditionalConverter : IDictConverter.IDictConverter
     {
-        public string NameForShow => "Hhj格式";
+        public string NameForShow => "额外例子格式";
 
         public string Serialize(Dictionary<string, string> dict)
         {
