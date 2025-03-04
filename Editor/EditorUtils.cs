@@ -58,8 +58,17 @@ namespace LocalizationTranslationWPF.Editor
             var dataTable = new DataTable();
 
             // Add a column for the translation key.
-            dataTable.Columns.Add("Key", typeof(string));
-            dataTable.Columns.Add(pair.Name, typeof(string));
+            dataTable.Columns.Add(new DataColumn()
+            {
+                ColumnName = "Key",
+                ReadOnly = true,
+                DataType = typeof(string),
+            });
+            dataTable.Columns.Add(new DataColumn()
+            {
+                ColumnName = pair.Name,
+                DataType = typeof(string),
+            });
 
             // Populate the DataTable rows using dataBase
             foreach (var entry in dataBase)
@@ -73,6 +82,8 @@ namespace LocalizationTranslationWPF.Editor
 
             // Finally, bind the DataTable to the DataGrid
             dataGrid.ItemsSource = dataTable.DefaultView;
+            //设置第一列不可编辑
+
         }
 
         /// <summary>
@@ -123,7 +134,7 @@ namespace LocalizationTranslationWPF.Editor
         /// <summary>
         /// 删除选中的翻译 Key，并在所有 Pair 中同步删除该 Key
         /// </summary>
-        internal static void DeleteKey()
+        internal static void DeleteKeys()
         {
             if (dataGrid == null || pairs == null)
             {
@@ -131,16 +142,16 @@ namespace LocalizationTranslationWPF.Editor
                 return;
             }
 
-            if(dataGrid.SelectedItems.Count == 0)
+            if (dataGrid.SelectedItems.Count == 0)
             {
                 LogUtils.LogError("选中项无效");
                 return;
             }
 
-            List<string> keys = new List<string>();
-            foreach(var item  in dataGrid.SelectedItems)
+            List<string> keys = new();
+            foreach (var item in dataGrid.SelectedItems)
             {
-                if(item is not DataRowView rowView)
+                if (item is not DataRowView rowView)
                 {
                     continue;
                 }
@@ -175,7 +186,7 @@ namespace LocalizationTranslationWPF.Editor
                     continue;
                 }
 
-                foreach(var key in keys)
+                foreach (var key in keys)
                 {
                     if (dict.ContainsKey(key))
                     {

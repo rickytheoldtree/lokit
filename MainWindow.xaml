@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LocalizationTranslationWPF"
         mc:Ignorable="d"
-        Title="本地化工具 - LYQ" Topmost="True" MinWidth="600" MinHeight="600">
+        Title="本地化工具 - LYQ" Topmost="True" MinWidth="600" MinHeight="600" Width="600" Height="600">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -37,7 +37,7 @@
             </TabItem>
             <TabItem Header="编辑" Height="21" Margin="-2,-2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="40">
                 <Grid Background="White">
-                    <DataGrid x:Name="dataGrid" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0" Background="White"/>
+                    <DataGrid x:Name="dataGrid" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0" Background="White" IsTextSearchCaseSensitive="True" CanUserDeleteRows="False" CanUserAddRows="False"/>
                     <ComboBox x:Name="comboBoxEditorTargetLanguage" HorizontalAlignment="Left" Margin="55,4,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="comboBoxEditorTargetLanguage_SelectionChanged"/>
                     <Label x:Name="labelEditorTargetLanguage" Content="语言" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top"/>
                     <Button x:Name="btnEditorSave" Content="保存" HorizontalAlignment="Left" Margin="180,6,0,0" VerticalAlignment="Top" Click="btnEditorSave_Click"/>

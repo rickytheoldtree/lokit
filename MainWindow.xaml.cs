@@ -238,7 +238,7 @@ namespace LocalizationTranslationWPF
 
         private void btnEditorDeleteKey_Click(object sender, RoutedEventArgs e)
         {
-            EditorUtils.DeleteKey();
+            EditorUtils.DeleteKeys();
         }
 
         private void btnOpenEditorFolder_Click(object sender, RoutedEventArgs e)
