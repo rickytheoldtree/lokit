@@ -8,7 +8,6 @@ using LocalizationTranslationWPF.Data;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using LocalizationTranslationWPF.Utils;
-using LocalizationTranslationWPF.Editor;
 
 namespace LocalizationTranslationWPF
 {
@@ -224,11 +223,18 @@ namespace LocalizationTranslationWPF
         private void tabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if(e.Source != tabControl) return;
-            if (tabControl.SelectedIndex != 1) return;
-            var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
-            EditorUtils.Init(dataGrid, pairs);
-            comboBoxEditorTargetLanguage.ItemsSource = pairs;
-            comboBoxEditorTargetLanguage.SelectedIndex = 0;
+            switch (tabControl.SelectedIndex)
+            {
+                default:
+                    break;
+                case 1:
+                    EditorUtils.Init(dataGridEditor, comboBoxEditorTargetLanguage);
+                    break;
+                case 2:
+                    AddNewUtils.Init(dataGridAddNew);
+                    break;
+            }
+
         }
 
         private void btnEditorSave_Click(object sender, RoutedEventArgs e)
@@ -244,6 +250,21 @@ namespace LocalizationTranslationWPF
         private void btnOpenEditorFolder_Click(object sender, RoutedEventArgs e)
         {
             PathUtils.OpenEditorFolder();
+        }
+
+        private void btnAddNewSave_Click(object sender, RoutedEventArgs e)
+        {
+            AddNewUtils.Save();
+        }
+
+        private void btnOpenAddNewFolder_Click(object sender, RoutedEventArgs e)
+        {
+            PathUtils.OpenNewFolder();
+        }
+
+        private void btnAddNewLoad_Click(object sender, RoutedEventArgs e)
+        {
+            AddNewUtils.Load();
         }
     }
 }

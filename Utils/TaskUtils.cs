@@ -59,7 +59,7 @@ namespace LocalizationTranslationWPF.Utils
                 return false;
             }
             var sb = new StringBuilder();
-            if (!TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
+            if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
             {
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
                 return false;
@@ -109,28 +109,9 @@ namespace LocalizationTranslationWPF.Utils
             {
                 Directory.CreateDirectory(PathUtils.OutputPath);
             }
-            OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
+            IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
             LogUtils.Log($"{to.Name}翻译完成，文件路径：{PathUtils.OutputPath}\\{to.Name}.json");
             return true;
-        }
-
-        public static void OutputJson(string path, Dictionary<string, string> dic, IDictConverter.IDictConverter converter)
-        {
-            File.WriteAllText(path, converter.Serialize(dic));
-        }
-
-        public static bool TryInputJson(string originJsonPath, IDictConverter.IDictConverter converter, out Dictionary<string, string>? dict)
-        {
-            try
-            {
-                return converter.TryDeserialize(File.ReadAllText(originJsonPath), out dict);
-            }
-            catch
-            {
-                dict = null;
-                return false;
-            }
-            
         }
 
         public static bool CombineTask(Pair pair)
@@ -143,12 +124,12 @@ namespace LocalizationTranslationWPF.Utils
                 LogUtils.LogError("无法找到转换器");
                 return false;
             }
-            if(!TryInputJson(sourcePath, dictConverter, out var sourceDict) || sourceDict == null)
+            if(!IOUtils.TryInputJson(sourcePath, dictConverter, out var sourceDict) || sourceDict == null)
             {
                 LogUtils.LogError($"读取{sourcePath}失败");
                 return false;
             }
-            if (!TryInputJson(newPath, dictConverter, out var newDict) || newDict == null)
+            if (!IOUtils.TryInputJson(newPath, dictConverter, out var newDict) || newDict == null)
             {
                 LogUtils.LogError($"读取{newPath}失败");
                 return false;
@@ -158,7 +139,7 @@ namespace LocalizationTranslationWPF.Utils
             {
                 sourceDict[kv.Key] = kv.Value;
             }
-            OutputJson($"{PathUtils.CombineOutputPath}\\{pair.Name}.json", sourceDict, dictConverter);
+            IOUtils.OutputJson($"{PathUtils.CombineOutputPath}\\{pair.Name}.json", sourceDict, dictConverter);
             LogUtils.Log($"{pair.Name}合并完成，文件路径：{PathUtils.OutputPath}\\{pair.Name}.json");
             return true;
         }

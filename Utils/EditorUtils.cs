@@ -1,17 +1,11 @@
 ﻿using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Utils;
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Transactions;
 using System.Windows.Controls;
 
-namespace LocalizationTranslationWPF.Editor
+namespace LocalizationTranslationWPF.Utils
 {
     public static class EditorUtils
     {
@@ -21,10 +15,13 @@ namespace LocalizationTranslationWPF.Editor
         // 新增一个当前编辑的 Pair 记录
         private static Pair CurrentPair { get; set; }
 
-        public static void Init(DataGrid dataGrid, List<Pair> pairs)
+        public static void Init(DataGrid dataGrid, ComboBox comboBoxEditorTargetLanguage)
         {
+            var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
             EditorUtils.dataGrid = dataGrid;
             EditorUtils.pairs = pairs;
+            comboBoxEditorTargetLanguage.ItemsSource = pairs;
+            comboBoxEditorTargetLanguage.SelectedIndex = 0;
             dataBase?.Clear();
         }
 
@@ -48,7 +45,7 @@ namespace LocalizationTranslationWPF.Editor
                 LogUtils.LogError($"{PathUtils.EditPath}\\{pair.Name}.json不存在");
                 return;
             }
-            if (!TaskUtils.TryInputJson(originJsonPath, dictConverter, out dataBase) || dataBase == null)
+            if (!IOUtils.TryInputJson(originJsonPath, dictConverter, out dataBase) || dataBase == null)
             {
                 LogUtils.LogError($"读取{originJsonPath}失败");
                 return;
@@ -128,7 +125,7 @@ namespace LocalizationTranslationWPF.Editor
             }
 
             var originJsonPath = $"{PathUtils.EditPath}\\{CurrentPair.Name}.json";
-            TaskUtils.OutputJson(originJsonPath, newDataBase, dictConverter);
+            IOUtils.OutputJson(originJsonPath, newDataBase, dictConverter);
         }
 
         /// <summary>
@@ -180,7 +177,7 @@ namespace LocalizationTranslationWPF.Editor
                     continue;
                 }
 
-                if (!TaskUtils.TryInputJson(filePath, dictConverter, out var dict) || dict == null)
+                if (!IOUtils.TryInputJson(filePath, dictConverter, out var dict) || dict == null)
                 {
                     LogUtils.LogError($"读取 {filePath} 失败");
                     continue;
@@ -193,7 +190,7 @@ namespace LocalizationTranslationWPF.Editor
                         dict.Remove(key);
                     }
                 }
-                TaskUtils.OutputJson(filePath, dict, dictConverter);
+                IOUtils.OutputJson(filePath, dict, dictConverter);
             }
 
             UpdateGrid(CurrentPair);

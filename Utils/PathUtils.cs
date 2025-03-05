@@ -9,13 +9,14 @@ namespace LocalizationTranslationWPF.Utils
 {
     public static class PathUtils
     {
-        public const string ConfigPath = "config.json";
+        public const string ConfigPath = "data\\config.json";
         public const string InputPath = "data\\input";
         public const string OutputPath = "data\\output";
         public const string IsoPath = "data\\iso";
         public const string EditPath = "data\\edit";
-        public const string DriverPath = "web-drivers";
-        public const string DictConverterDllPath = "converters";
+        public const string NewPath = "data\\new";
+        public const string DriverPath = "data\\web-drivers";
+        public const string DictConverterDllPath = "data\\converters";
         public const string CombineSourcePath = "data\\combine_source";
         public const string CombineOutputPath = "data\\combine_output";
 
@@ -49,6 +50,10 @@ namespace LocalizationTranslationWPF.Utils
             if (!Directory.Exists(EditPath))
             {
                 Directory.CreateDirectory(EditPath);
+            }
+            if (!Directory.Exists(NewPath))
+            {
+                Directory.CreateDirectory(NewPath);
             }
         }
         public static void OpenOutputFolder()
@@ -86,6 +91,10 @@ namespace LocalizationTranslationWPF.Utils
         internal static void OpenEditorFolder()
         {
             System.Diagnostics.Process.Start("explorer.exe", EditPath);
+        }
+        internal static void OpenNewFolder()
+        {
+            System.Diagnostics.Process.Start("explorer.exe", NewPath);
         }
     }
 }

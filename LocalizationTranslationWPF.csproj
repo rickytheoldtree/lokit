@@ -24,19 +24,19 @@
     <None Remove="data\iso\TripeaksDecor.txt" />
     <None Remove="data\iso\WaterSort.txt" />
     <None Remove="README.md" />
-    <None Remove="web-drivers\chromedriver.exe" />
-    <None Remove="web-drivers\geckodriver.exe" />
-    <None Remove="web-drivers\msedgedriver.exe" />
+    <None Remove="data\web-drivers\chromedriver.exe" />
+    <None Remove="data\web-drivers\geckodriver.exe" />
+    <None Remove="data\web-drivers\msedgedriver.exe" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="web-drivers\chromedriver.exe">
+    <Content Include="data\web-drivers\chromedriver.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="web-drivers\geckodriver.exe">
+    <Content Include="data\web-drivers\geckodriver.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="web-drivers\msedgedriver.exe">
+    <Content Include="data\web-drivers\msedgedriver.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -47,7 +47,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="converters\" />
+    <Folder Include="data\converters\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,7 +61,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="converters\TripeaksFarm.dll">
+    <None Update="data\converters\ExampleAdditionalConverter.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="data\iso\Example.txt">
