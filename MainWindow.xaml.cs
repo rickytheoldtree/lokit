@@ -8,6 +8,7 @@ using LocalizationTranslationWPF.Data;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using LocalizationTranslationWPF.Utils;
+using System.Windows.Input;
 
 namespace LocalizationTranslationWPF
 {
@@ -265,6 +266,15 @@ namespace LocalizationTranslationWPF
         private void btnAddNewLoad_Click(object sender, RoutedEventArgs e)
         {
             AddNewUtils.Load();
+        }
+
+        private void dataGridAddNew_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                AddNewUtils.PasteClipboardData(dataGridAddNew);
+                e.Handled = true;
+            }
         }
     }
 }

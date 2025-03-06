@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace LocalizationTranslationWPF.Utils
@@ -84,6 +85,35 @@ namespace LocalizationTranslationWPF.Utils
                     row["Key"] = item.Key;
                     row["Value"] = item.Value;
                     dataTable.Rows.Add(row);
+                }
+            }
+        }
+
+        internal static void PasteClipboardData(DataGrid dataGridAddNew)
+        {
+            // 从剪贴板中获取文本数据
+            string clipboardText = Clipboard.GetText();
+            if (!string.IsNullOrEmpty(clipboardText))
+            {
+                // 将剪贴板内容按行分割（适应 Windows 与 Unix 行结束符）
+                string[] rows = clipboardText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (string row in rows)
+                {
+                    // 将每行文本按制表符分割，假设数据为制表符分隔格式
+                    string[] cells = row.Split('\t');
+
+                    // 创建 DataTable 的新行，假设 myDataTable 为你绑定到 DataGrid 的 DataTable 对象
+                    DataRow newRow = dataTable.NewRow();
+
+                    // 遍历每个单元格数据并赋值到新行中
+                    for (int i = 0; i < cells.Length && i < dataTable.Columns.Count; i++)
+                    {
+                        newRow[i] = cells[i];
+                    }
+
+                    // 将新行添加到 DataTable 中
+                    dataTable.Rows.Add(newRow);
                 }
             }
         }

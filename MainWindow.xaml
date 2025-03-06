@@ -43,7 +43,7 @@
             </TabItem>
             <TabItem Header="新增">
                 <Grid>
-                    <DataGrid x:Name="dataGridAddNew" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0"/>
+                    <DataGrid x:Name="dataGridAddNew" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0" PreviewKeyDown="dataGridAddNew_PreviewKeyDown"/>
                     <Button x:Name="btnAddNewSave" Content="保存" HorizontalAlignment="Left" Margin="136,6,0,0" VerticalAlignment="Top" Click="btnAddNewSave_Click"/>
                     <Button x:Name="btnOpenAddNewFolder" Content="打开新增文件夹" HorizontalAlignment="Left" Margin="10,6,0,0" VerticalAlignment="Top" Click="btnOpenAddNewFolder_Click"/>
                     <Button x:Name="btnAddNewLoad" Content="加载" HorizontalAlignment="Left" Margin="103,6,0,0" VerticalAlignment="Top" Click="btnAddNewLoad_Click"/>
