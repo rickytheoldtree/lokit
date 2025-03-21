@@ -34,19 +34,28 @@ namespace LocalizationTranslationWPF.Translate
         private GoogleTranslator(Config.WebDriverType type)
         {
             webDriverType = Config.WebDriverType.Edge;
-            switch (type)
+            try
             {
-                default:
-                case Config.WebDriverType.Edge:
-                    webDriver = new EdgeDriver(PathUtils.DriverPath);
-                    break;
-                case Config.WebDriverType.Chrome:
-                    webDriver = new ChromeDriver(PathUtils.DriverPath);
-                    break;
-                case Config.WebDriverType.FireFox:
-                    webDriver = new FirefoxDriver(PathUtils.DriverPath);
-                    break;
+                switch (type)
+                {
+                    default:
+                    case Config.WebDriverType.Edge:
+                        webDriver = new EdgeDriver(PathUtils.DriverPath);
+                        break;
+                    case Config.WebDriverType.Chrome:
+                        webDriver = new ChromeDriver(PathUtils.DriverPath);
+                        break;
+                    case Config.WebDriverType.FireFox:
+                        webDriver = new FirefoxDriver(PathUtils.DriverPath);
+                        break;
+                }
             }
+            catch
+            {
+                webDriver?.Dispose();
+                throw;
+            }
+            
         }
         public async Task<bool> Translate(string txt, string from, string to, Action<List<string>> callback)
         {
@@ -109,6 +118,7 @@ namespace LocalizationTranslationWPF.Translate
         public static void Close()
         {
             if (instance == null) return;
+            instance.webDriver.Close();
             instance.webDriver.Quit();
             instance = null;
         }

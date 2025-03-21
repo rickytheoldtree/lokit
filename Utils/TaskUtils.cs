@@ -34,7 +34,7 @@ namespace LocalizationTranslationWPF.Utils
             return true;
         }
 
-        public static async Task<bool> TranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter)
+        public static async Task<bool> GoogleTranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter)
         {
             GoogleTranslator translator;
             try
@@ -104,6 +104,52 @@ namespace LocalizationTranslationWPF.Utils
             for (var i = 0; i < keys.Count; i++)
             {
                 dic.Add(keys[i], values[i]);
+            }
+            if (!Directory.Exists(PathUtils.OutputPath))
+            {
+                Directory.CreateDirectory(PathUtils.OutputPath);
+            }
+            IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
+            LogUtils.Log($"{to.Name}翻译完成，文件路径：{PathUtils.OutputPath}\\{to.Name}.json");
+            return true;
+        }
+
+        public static async Task<bool> AITranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter)
+        {
+            var translator = new AITranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint, ConfigUtils.Config.aiModel);
+
+            if (from.isoCode == to.isoCode)
+            {
+                LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
+                return true;
+            }
+
+            var originJsonPath = $"{PathUtils.InputPath}\\{from.Name}.json";
+            if (!File.Exists(originJsonPath))
+            {
+                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json不存在");
+                return false;
+            }
+            var sb = new StringBuilder();
+            if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
+            {
+                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
+                return false;
+            }
+            string result =  await translator.Translate(converter.Serialize(originJson), to);
+            Dictionary<string, string>? dic;
+            try
+            {
+                if (!converter.TryDeserialize(result, out dic) || dic == null)
+                {
+                    LogUtils.LogError($"{from.Name}翻译失败，ai翻译结果格式错误");
+                    return false;
+                }
+            }
+            catch
+            {
+                LogUtils.LogError($"{from.Name}翻译失败，ai翻译结果格式错误");
+                return false;
             }
             if (!Directory.Exists(PathUtils.OutputPath))
             {

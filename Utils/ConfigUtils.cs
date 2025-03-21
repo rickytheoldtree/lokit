@@ -37,6 +37,27 @@ namespace LocalizationTranslationWPF.Utils
         {
             TargetLang = PairUtils.GetPairsWithAll(IsoPairIndex.Value)[index];
         });
+        public static EventProperty<TranslateMethod> TranslateMethod { get; } = new EventProperty<TranslateMethod>(Config.translateMethod, method =>
+        {
+            Config.translateMethod = method;
+            Save();
+        });
+
+        public static EventProperty<string> ApiEndpoint { get; } = new EventProperty<string>(Config.aiEndpoint, value =>
+        {
+            Config.aiEndpoint = value;
+            Save();
+        });
+        public static EventProperty<string> ApiKey { get; } = new EventProperty<string>(Config.aiAPIKey, value =>
+        {
+            Config.aiAPIKey = value;
+            Save();
+        });
+        public static EventProperty<string> AIModel { get; } = new EventProperty<string>(Config.aiModel, value =>
+        {
+            Config.aiModel = value;
+            Save();
+        });
         public static Pair SourceLang { get; private set; }
         public static Pair TargetLang { get; private set; }
         private static void Save()

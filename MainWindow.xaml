@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LocalizationTranslationWPF"
         mc:Ignorable="d"
-        Title="本地化工具 - LYQ" MinWidth="600" MinHeight="480" Width="600" Height="480">
+        Title="本地化工具 - LYQ" MinWidth="600" MinHeight="500" Width="600" Height="480">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TabControl x:Name="tabControl" SelectionChanged="tabControl_SelectionChanged" Grid.ColumnSpan="2" Margin="10,10,10,220">
+        <TabControl x:Name="tabControl" SelectionChanged="tabControl_SelectionChanged" Margin="10,10,10,215" MinHeight="240">
             <TabItem Header="翻译">
                 <Grid Background="White" VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
@@ -25,10 +25,12 @@
                     <Label x:Name="label4" Content="目标语言" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Height="25" Width="58"/>
                     <Button x:Name="btnOpenInput" Content="语言源文件夹" HorizontalAlignment="Left" Margin="0,50,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenInput_Click" Grid.Column="2"/>
                     <Button x:Name="btnOpenOutput" Content="输出文件夹" HorizontalAlignment="Left" Margin="0,80,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenOutput_Click" Grid.Column="2"/>
-                    <Button x:Name="btnSimplified2Traditional" Content="简=&gt;繁" HorizontalAlignment="Left" Margin="5,80,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnSimplified2Traditional_Click" Grid.Column="1"/>
-                    <Button x:Name="btnCombine" Content="合并" HorizontalAlignment="Left" Margin="5,110,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnCombine_Click" Grid.Column="1"/>
+                    <Button x:Name="btnSimplified2Traditional" Content="简=&gt;繁" HorizontalAlignment="Left" Margin="5,110,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnSimplified2Traditional_Click" Grid.Column="1"/>
+                    <Button x:Name="btnCombine" Content="合并" HorizontalAlignment="Left" Margin="5,140,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnCombine_Click" Grid.Column="1"/>
                     <Button x:Name="btnOpenCombineSourceFolder" Content="合并源文件夹" HorizontalAlignment="Left" Margin="0,110,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenCombineSourceFolder_Click" Grid.Column="2"/>
                     <Button x:Name="btnOpenCombineOutputFolder" Content="合并输出文件夹" HorizontalAlignment="Left" Margin="0,140,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenCombineOutputFolder_Click" Grid.Column="2"/>
+                    <ComboBox x:Name="translateMethodComboBox" HorizontalAlignment="Left" Margin="5,80,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="translateMethodComboBox_SelectionChanged" Grid.Column="1" Height="21"/>
+                    <Label x:Name="label5" Content="翻译方式" HorizontalAlignment="Right" Margin="0,80,0,0" VerticalAlignment="Top" Height="25" Width="58"/>
                 </Grid>
             </TabItem>
             <TabItem Header="编辑">
@@ -66,6 +68,12 @@
                     <Button x:Name="btnOpenISO" Content="语言ISO文件夹" HorizontalAlignment="Left" Margin="0,80,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenISO_Click" Grid.Column="2"/>
                     <Button x:Name="btnDictConverter" Content="格式配置文件夹" HorizontalAlignment="Left" Margin="0,50,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnDictConverter_Click" Grid.Column="2"/>
                     <Button x:Name="btnOpenDriversFolder" Content="驱动文件夹" HorizontalAlignment="Left" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenDriversFolder_Click" Grid.Column="2" Margin="0,20,0,0"/>
+                    <Label x:Name="label6" Content="API Endpoint(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,110,0,0"/>
+                    <TextBox x:Name="textBoxApiEndpoint" Grid.Column="1" HorizontalAlignment="Left" Margin="10,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="textBoxApiEndpoint_TextChanged" Grid.ColumnSpan="2" Height="20"/>
+                    <Label x:Name="label7" Content="API Key(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,140,0,0"/>
+                    <TextBox x:Name="textBoxApiKey" Grid.Column="1" HorizontalAlignment="Left" Margin="10,143,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="textBoxApiKey_TextChanged" Grid.ColumnSpan="2" Height="20"/>
+                    <Label x:Name="label8" Content="Model(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,170,0,0"/>
+                    <TextBox x:Name="textBoxModel" Grid.Column="1" HorizontalAlignment="Left" Margin="10,173,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="textBoxModel_TextChanged" Grid.ColumnSpan="2" Height="20"/>
                 </Grid>
             </TabItem>
         </TabControl>

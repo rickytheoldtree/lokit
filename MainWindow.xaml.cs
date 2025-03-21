@@ -6,9 +6,8 @@ using System.Windows;
 using System.Windows.Controls;
 using LocalizationTranslationWPF.Data;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using LocalizationTranslationWPF.Utils;
-using System.Windows.Input;
+using static LocalizationTranslationWPF.Data.Config;
 
 namespace LocalizationTranslationWPF
 {
@@ -30,7 +29,7 @@ namespace LocalizationTranslationWPF
         private void Init()
         {
             PathUtils.MakeSureFolderExist();
-            webDriveComboBox.ItemsSource = Enum.GetValues(typeof(Config.WebDriverType)).Cast<Config.WebDriverType>();
+            webDriveComboBox.ItemsSource = Enum.GetValues(typeof(WebDriverType)).Cast<WebDriverType>();
             webDriveComboBox.SelectedIndex = (int)ConfigUtils.WebDriver.Value;
             ToolTipService.SetInitialShowDelay(webDriveComboBox, 0);
 
@@ -49,50 +48,33 @@ namespace LocalizationTranslationWPF
             targetLangComboBox.ItemsSource = PairUtils.GetPairsWithAll(ConfigUtils.IsoPairIndex.Value);
             targetLangComboBox.SelectedIndex = ConfigUtils.TargetLangIndex.Value;
             ToolTipService.SetInitialShowDelay(targetLangComboBox, 0);
+
+            translateMethodComboBox.ItemsSource = Enum.GetValues(typeof(TranslateMethod)).Cast<TranslateMethod>();
+            translateMethodComboBox.SelectedIndex = (int)ConfigUtils.TranslateMethod.Value;
+
+            textBoxApiEndpoint.Text = ConfigUtils.ApiEndpoint.Value;
+            textBoxApiKey.Text = ConfigUtils.ApiKey.Value;
+            textBoxModel.Text = ConfigUtils.AIModel.Value;
         }
         private async void btnStart_Click(object sender, RoutedEventArgs e)
         {
-            LockUI();
-            await MainTask();
-            UnlockUI();
-        }
-        private async Task MainTask()
-        {
-            await Task.Run( async () =>
+            switch (ConfigUtils.TranslateMethod.Value)
             {
-                var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
-                if(dictConverter == null)
-                {
-                    LogUtils.LogError("字典转换器类型错误");
-                    return;
-                }
-                var sourceLang = ConfigUtils.SourceLang;
-                var targetLang = ConfigUtils.TargetLang;
-                if (targetLang.Name == "All")
-                {
-                    foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
-                    {
-                        targetLang = pair;
-                        if (!await TaskUtils.TranslateTask(sourceLang, targetLang, dictConverter))
-                        {
-                            LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            continue;
-                        }
-                    }
-                }
-                else
-                {
-                    await TaskUtils.TranslateTask(sourceLang, targetLang, dictConverter);
-                }
-                GoogleTranslator.Close();
-            });
-        } 
+                case TranslateMethod.GoogleTranslate:
+                    await GoogleTranslateTask.Run(this);
+                    break;
+                case TranslateMethod.AI:
+                    await AITranslateTask.Run(this);
+                    break;
+            }
+        }
+
         private void webDriveComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.Source != webDriveComboBox) return;
             if (webDriveComboBox.SelectedIndex == -1) return;
 
-            ConfigUtils.WebDriver.Value = (Config.WebDriverType)webDriveComboBox.SelectedIndex;
+            ConfigUtils.WebDriver.Value = (WebDriverType)webDriveComboBox.SelectedIndex;
             webDriveComboBox.ToolTip = ToolTipUtils.WebDriverToolTip;
         }
 
@@ -150,25 +132,16 @@ namespace LocalizationTranslationWPF
         {
             PathUtils.OpenIsoFolder();
         }
-        private void LockUI()
+        public void SetUILock(bool isLocked)
         {
-            btnStart.IsEnabled = false;
-            webDriveComboBox.IsEnabled = false;
-            dictConverterComboBox.IsEnabled = false;
-            isoPairComboBox.IsEnabled = false;
-            sourceLangComboBox.IsEnabled = false;
-            targetLangComboBox.IsEnabled = false;
-            tabControl.IsEnabled = false;
-        }
-        private void UnlockUI()
-        {
-            btnStart.IsEnabled = true;
-            webDriveComboBox.IsEnabled = true;
-            dictConverterComboBox.IsEnabled = true;
-            isoPairComboBox.IsEnabled = true;
-            sourceLangComboBox.IsEnabled = true;
-            targetLangComboBox.IsEnabled = true;
-            tabControl.IsEnabled = true;
+            btnStart.IsEnabled = !isLocked;
+            webDriveComboBox.IsEnabled = !isLocked;
+            dictConverterComboBox.IsEnabled = !isLocked;
+            isoPairComboBox.IsEnabled = !isLocked;
+            sourceLangComboBox.IsEnabled = !isLocked;
+            targetLangComboBox.IsEnabled = !isLocked;
+            tabControl.IsEnabled = !isLocked;
+            translateMethodComboBox.IsEnabled = !isLocked;
         }
 
         private void btnDictConverter_Click(object sender, RoutedEventArgs e)
@@ -271,6 +244,29 @@ namespace LocalizationTranslationWPF
         private void btnPasteRow_Click(object sender, RoutedEventArgs e)
         {
             AddNewUtils.PasteClipboardData(dataGridAddNew);
+        }
+
+        private void translateMethodComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.Source != translateMethodComboBox) return;
+            if (translateMethodComboBox.SelectedIndex == -1) return;
+
+            ConfigUtils.TranslateMethod.Value = (TranslateMethod)translateMethodComboBox.SelectedIndex;
+        }
+
+        private void textBoxApiEndpoint_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ConfigUtils.ApiEndpoint.Value = textBoxApiEndpoint.Text;
+        }
+
+        private void textBoxApiKey_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ConfigUtils.ApiKey.Value = textBoxApiKey.Text;
+        }
+
+        private void textBoxModel_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ConfigUtils.AIModel.Value = textBoxModel.Text;
         }
     }
 }
