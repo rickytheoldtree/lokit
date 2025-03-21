@@ -268,13 +268,9 @@ namespace LocalizationTranslationWPF
             AddNewUtils.Load();
         }
 
-        private void dataGridAddNew_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private void btnPasteRow_Click(object sender, RoutedEventArgs e)
         {
-            if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-            {
-                AddNewUtils.PasteClipboardData(dataGridAddNew);
-                e.Handled = true;
-            }
+            AddNewUtils.PasteClipboardData(dataGridAddNew);
         }
     }
 }
