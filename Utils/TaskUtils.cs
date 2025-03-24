@@ -36,9 +36,8 @@ namespace LocalizationTranslationWPF.Utils
             return true;
         }
 
-        public static async Task<bool> GoogleTranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
+        public static async Task<bool> GoogleTranslateTask(GoogleTranslator translator, Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
         {
-            using var translator = GoogleTranslator.GetInstance(ConfigUtils.WebDriver.Value);
             if (from.isoCode == to.isoCode)
             {
                 LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");

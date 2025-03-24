@@ -62,13 +62,9 @@ namespace LocalizationTranslationWPF
                 cts = new CancellationTokenSource();
                 SetUILock(true);
 
-                cancelWindow = new CancelWindow
+                cancelWindow = new CancelWindow(cts)
                 {
                     Owner = this
-                };
-                cancelWindow.CancelRequested += (_, _) =>
-                {
-                    cts?.Cancel();
                 };
                 cancelWindow.Show();
 
@@ -92,10 +88,10 @@ namespace LocalizationTranslationWPF
             }
             finally
             {
-                // 任务完成后关闭取消对话框
                 cancelWindow?.Close();
                 cts = null;
                 SetUILock(false);
+                Focus();
             }
         }
 

@@ -1,20 +1,23 @@
 ﻿using System;
+using System.Threading;
 using System.Windows;
 
 namespace LocalizationTranslationWPF;
 
 public partial class CancelWindow : Window
 {
-    // 提供一个事件，用于通知外部点击了取消按钮
-    public event EventHandler? CancelRequested;
+    private event Action CancelRequested;
     
-    public CancelWindow()
+    public CancelWindow(CancellationTokenSource cts)
     {
+        CancelRequested = cts.Cancel;
         InitializeComponent();
     }
 
     private void BtnCancelClick(object sender, RoutedEventArgs e)
     {
-        CancelRequested?.Invoke(this, EventArgs.Empty);
+        CancelRequested.Invoke();
+        BtnCancelTask.IsEnabled = false;
+        BtnCancelTask.Content = "正在取消...";
     }
 }

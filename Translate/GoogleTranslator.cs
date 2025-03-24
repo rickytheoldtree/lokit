@@ -13,30 +13,12 @@ namespace LocalizationTranslationWPF.Translate
 {
     public class GoogleTranslator : IDisposable
     {
-        private static GoogleTranslator? instance;
-        private readonly Config.WebDriverType webDriverType;
         private readonly IWebDriver? webDriver;
         private readonly DriverService? service;
         private string url = "";
 
-        public static GoogleTranslator GetInstance(Config.WebDriverType type)
+        public GoogleTranslator(Config.WebDriverType type)
         {
-            if (instance == null)
-            {
-                instance = new GoogleTranslator(type);
-            }
-            else if (instance.webDriverType != type)
-            {
-                instance = new GoogleTranslator(type);
-            }
-
-            return instance;
-        }
-
-        private GoogleTranslator(Config.WebDriverType type)
-        {
-            webDriverType = Config.WebDriverType.Edge;
-            
             try
             {
                 switch (type)
@@ -69,8 +51,8 @@ namespace LocalizationTranslationWPF.Translate
 
         public void Dispose()
         {
-            webDriver?.Quit();
             service?.Dispose();
+            webDriver?.Quit();
         }
 
         public async Task<bool> Translate(string txt, string from, string to, Action<List<string>> callback,
@@ -106,21 +88,14 @@ namespace LocalizationTranslationWPF.Translate
                         break;
                     }
                 }
-                catch (Exception e)
+                catch (NoSuchWindowException e)
                 {
-                    if (e is NoSuchWindowException)
-                    {
-                        LogUtils.LogError(e.Message);
-                        return false;
-                    }
+                    LogUtils.LogError(e.Message);
+                    return false;
                 }
 
                 count++;
                 await Task.Delay(1000, token);
-                if (token.IsCancellationRequested)
-                {
-                    return false;
-                }
             }
 
             if (!success)
@@ -131,10 +106,6 @@ namespace LocalizationTranslationWPF.Translate
             }
 
             await Task.Delay(1000, token);
-            if (token.IsCancellationRequested)
-            {
-                return false;
-            }
 
             //访问Windows粘贴板
             var text = ThreadUtils.GetClipboard();

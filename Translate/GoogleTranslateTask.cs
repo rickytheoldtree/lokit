@@ -17,27 +17,30 @@ namespace LocalizationTranslationWPF.Translate
                 {
                     throw new Exception("字典转换器类型错误");
                 }
+
                 var sourceLang = ConfigUtils.SourceLang;
                 var targetLang = ConfigUtils.TargetLang;
-                if (targetLang.Name == "All")
+                using var translator = new GoogleTranslator(ConfigUtils.WebDriver.Value);
+                switch (targetLang.Name)
                 {
-                    foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
+                    case "All":
                     {
-                        targetLang = pair;
-                        if (!await TaskUtils.GoogleTranslateTask(sourceLang, targetLang, dictConverter, token))
+                        foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
                         {
-                            LogUtils.LogError($"翻译{targetLang.Name}失败");
+                            token.ThrowIfCancellationRequested();
+                            targetLang = pair;
+                            if (!await TaskUtils.GoogleTranslateTask(translator, sourceLang, targetLang, dictConverter,
+                                    token))
+                            {
+                                LogUtils.LogError($"翻译{targetLang.Name}失败");
+                            }
                         }
 
-                        if (token.IsCancellationRequested)
-                        {
-                            break;
-                        }
+                        break;
                     }
-                }
-                else
-                {
-                    await TaskUtils.GoogleTranslateTask(sourceLang, targetLang, dictConverter, token);
+                    default:
+                        await TaskUtils.GoogleTranslateTask(translator, sourceLang, targetLang, dictConverter, token);
+                        break;
                 }
             }, token);
         }
