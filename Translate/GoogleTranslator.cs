@@ -43,16 +43,16 @@ namespace LocalizationTranslationWPF.Translate
             }
             catch
             {
-                service?.Dispose();
                 webDriver?.Quit();
+                service?.Dispose();
                 throw;
             }
         }
 
         public void Dispose()
         {
-            service?.Dispose();
             webDriver?.Quit();
+            service?.Dispose();
         }
 
         public async Task<bool> Translate(string txt, string from, string to, Action<List<string>> callback,
