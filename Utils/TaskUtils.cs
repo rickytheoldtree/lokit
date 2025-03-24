@@ -38,16 +38,7 @@ namespace LocalizationTranslationWPF.Utils
 
         public static async Task<bool> GoogleTranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
         {
-            GoogleTranslator translator;
-            try
-            {
-                translator = GoogleTranslator.GetInstance(ConfigUtils.WebDriver.Value);
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"无法初始化WebDriver：{e.Message}");
-            }
-
+            using var translator = GoogleTranslator.GetInstance(ConfigUtils.WebDriver.Value);
             if (from.isoCode == to.isoCode)
             {
                 LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
@@ -65,6 +56,7 @@ namespace LocalizationTranslationWPF.Utils
             if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
             {
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
+
                 return false;
             }
 

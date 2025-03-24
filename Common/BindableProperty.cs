@@ -4,7 +4,7 @@ namespace LocalizationTranslationWPF.Common
 {
     public class BindableProperty<T>
     {
-        private Action<T> onValueChanged = _ => { };
+        private event Action<T> OnValueChanged = _ => { };
         private T value;
 
         public T Value
@@ -13,31 +13,31 @@ namespace LocalizationTranslationWPF.Common
             set
             {
                 this.value = value;
-                onValueChanged.Invoke(value);
+                OnValueChanged.Invoke(value);
             }
         }
 
-        public BindableProperty(T value = default)
+        public BindableProperty(T value = default(T))
         {
             this.value = value;
         }
 
         public BindableProperty<T> Register(Action<T> onValueChanged)
         {
-            this.onValueChanged += onValueChanged;
+            OnValueChanged += onValueChanged;
             return this;
         }
 
         public BindableProperty<T> RegisterAndInvoke(Action<T> onValueChanged)
         {
-            this.onValueChanged += onValueChanged;
+            OnValueChanged += onValueChanged;
             onValueChanged(value);
             return this;
         }
 
         public BindableProperty<T> UnRegister(Action<T> onValueChanged)
         {
-            this.onValueChanged -= onValueChanged;
+            OnValueChanged -= onValueChanged;
             return this;
         }
 

@@ -11,11 +11,12 @@ using System.Threading.Tasks;
 
 namespace LocalizationTranslationWPF.Translate
 {
-    public class GoogleTranslator
+    public class GoogleTranslator : IDisposable
     {
         private static GoogleTranslator? instance;
         private readonly Config.WebDriverType webDriverType;
-        private readonly IWebDriver webDriver;
+        private readonly IWebDriver? webDriver;
+        private readonly DriverService? service;
         private string url = "";
 
         public static GoogleTranslator GetInstance(Config.WebDriverType type)
@@ -35,33 +36,41 @@ namespace LocalizationTranslationWPF.Translate
         private GoogleTranslator(Config.WebDriverType type)
         {
             webDriverType = Config.WebDriverType.Edge;
+            
             try
             {
                 switch (type)
                 {
                     default:
                     case Config.WebDriverType.Edge:
-                        var service = EdgeDriverService.CreateDefaultService(PathUtils.DriverPath);
+                        service = EdgeDriverService.CreateDefaultService(PathUtils.DriverPath);
                         service.HideCommandPromptWindow = true;
-                        webDriver = new EdgeDriver(service);
+                        webDriver = new EdgeDriver(service as EdgeDriverService);
                         break;
                     case Config.WebDriverType.Chrome:
-                        var chromeService = ChromeDriverService.CreateDefaultService(PathUtils.DriverPath);
-                        chromeService.HideCommandPromptWindow = true;
-                        webDriver = new ChromeDriver(chromeService);
+                        service = ChromeDriverService.CreateDefaultService(PathUtils.DriverPath);
+                        service.HideCommandPromptWindow = true;
+                        webDriver = new ChromeDriver(service as ChromeDriverService);
                         break;
                     case Config.WebDriverType.FireFox:
-                        var fireFoxService = FirefoxDriverService.CreateDefaultService(PathUtils.DriverPath);
-                        fireFoxService.HideCommandPromptWindow = true;
-                        webDriver = new FirefoxDriver(fireFoxService);
+                        service = FirefoxDriverService.CreateDefaultService(PathUtils.DriverPath);
+                        service.HideCommandPromptWindow = true;
+                        webDriver = new FirefoxDriver(service as FirefoxDriverService);
                         break;
                 }
             }
             catch
             {
+                service?.Dispose();
                 webDriver?.Quit();
                 throw;
             }
+        }
+
+        public void Dispose()
+        {
+            webDriver?.Quit();
+            service?.Dispose();
         }
 
         public async Task<bool> Translate(string txt, string from, string to, Action<List<string>> callback,
@@ -73,7 +82,7 @@ namespace LocalizationTranslationWPF.Translate
                   "&op=translate";
             try
             {
-                webDriver.Navigate().GoToUrl(url);
+                webDriver?.Navigate().GoToUrl(url);
             }
             catch (Exception e)
             {
@@ -89,7 +98,7 @@ namespace LocalizationTranslationWPF.Translate
                 try
                 {
                     // find button aria-label="Copy translation"
-                    var button = webDriver.FindElement(By.CssSelector("button[aria-label='Copy translation']"));
+                    var button = webDriver?.FindElement(By.CssSelector("button[aria-label='Copy translation']"));
                     if (button != null)
                     {
                         button.Click();
