@@ -1,16 +1,11 @@
 ﻿using LocalizationTranslationWPF.DictConverter;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static LocalizationTranslationWPF.Data.Config;
 
 namespace LocalizationTranslationWPF.Utils
 {
-    public class ToolTipUtils
+    public static class ToolTipUtils
     {
-        private static Dictionary<string, string> SampleDict = new Dictionary<string, string>()
+        private static readonly Dictionary<string, string> SampleDict = new Dictionary<string, string>()
         {
             {"key1","value1" },
             {"key2","value2" },

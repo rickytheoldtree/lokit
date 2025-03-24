@@ -6,13 +6,13 @@ using System.Windows.Media;
 
 namespace LocalizationTranslationWPF.Utils
 {
-    public class LogUtils
+    public static class LogUtils
     {
         private static void UseLogBox(Action<RichTextBox> action)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                var logBox = Application.Current.MainWindow?.FindName("logBox") as RichTextBox;
+                var logBox = Application.Current.MainWindow?.FindName("LogBox") as RichTextBox;
                 if (logBox != null)
                 {
                     action(logBox);

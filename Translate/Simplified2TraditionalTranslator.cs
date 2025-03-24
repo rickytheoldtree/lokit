@@ -1,14 +1,13 @@
 ﻿using LocalizationTranslationWPF.Utils;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Microsoft.International.Converters.TraditionalChineseToSimplifiedConverter;
 
 namespace LocalizationTranslationWPF.Translate
 {
-    internal class Simplified2TraditionalTranslator
+    public static class Simplified2TraditionalTranslator
     {
-        internal static void Translate()
+        public static void Translate()
         {
             var sourceLang = ConfigUtils.SourceLang;
             var targetLang = ConfigUtils.TargetLang;

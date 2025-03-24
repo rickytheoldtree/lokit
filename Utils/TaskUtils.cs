@@ -23,11 +23,13 @@ namespace LocalizationTranslationWPF.Utils
                 Debug.WriteLine("找不到分隔符");
                 return false;
             }
+
             var length = 0;
             while (text.Length > startIndex + length && text[startIndex + length] == '-')
             {
                 length++;
             }
+
             var splitString = text.Substring(startIndex, length);
             values = text.Split(new[] { splitString }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim())
                 .Where(s => !string.IsNullOrEmpty(s)).ToList();
@@ -43,9 +45,11 @@ namespace LocalizationTranslationWPF.Utils
             }
             catch
             {
-                LogUtils.LogError($"{ConfigUtils.WebDriver.Value} 无法正常工作，请下载对应浏览器版本的WebDriver到根目录下的web-drivers里(搜索\"WebDriver {ConfigUtils.WebDriver.Value}\")");
+                LogUtils.LogError(
+                    $"{ConfigUtils.WebDriver.Value} 无法正常工作，请下载对应浏览器版本的WebDriver到根目录下的web-drivers里(搜索\"WebDriver {ConfigUtils.WebDriver.Value}\")");
                 return false;
             }
+
             if (from.isoCode == to.isoCode)
             {
                 LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
@@ -58,12 +62,14 @@ namespace LocalizationTranslationWPF.Utils
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json不存在");
                 return false;
             }
+
             var sb = new StringBuilder();
             if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
             {
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
                 return false;
             }
+
             var values = new List<string>();
             foreach (var d in originJson)
             {
@@ -73,27 +79,33 @@ namespace LocalizationTranslationWPF.Utils
                     LogUtils.LogError($"单个文本长度超过5000，无法翻译：{d.Key}；请自行切分后重新尝试");
                     return false;
                 }
+
                 if (sb.Length + newText.Length <= 5000)
                 {
                     sb.Append(newText);
                 }
                 else
                 {
-                    if (!await translator.Translate(sb.ToString(), from.isoCode, to.isoCode, (result) => { values.AddRange(result); }))
+                    if (!await translator.Translate(sb.ToString(), from.isoCode, to.isoCode,
+                            (result) => { values.AddRange(result); }))
                     {
                         return false;
                     }
+
                     sb.Clear();
                     sb.Append(newText);
                 }
             }
+
             if (sb.Length > 0)
             {
-                if (!await translator.Translate(sb.ToString(), from.isoCode, to.isoCode, (result) => { values.AddRange(result); }))
+                if (!await translator.Translate(sb.ToString(), from.isoCode, to.isoCode,
+                        (result) => { values.AddRange(result); }))
                 {
                     return false;
                 }
             }
+
             var dic = new Dictionary<string, string>();
             var keys = originJson.Keys.ToList();
             if (keys.Count != values.Count)
@@ -101,14 +113,17 @@ namespace LocalizationTranslationWPF.Utils
                 LogUtils.LogError("翻译后数量与原文本数量不一致");
                 return false;
             }
+
             for (var i = 0; i < keys.Count; i++)
             {
                 dic.Add(keys[i], values[i]);
             }
+
             if (!Directory.Exists(PathUtils.OutputPath))
             {
                 Directory.CreateDirectory(PathUtils.OutputPath);
             }
+
             IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
             LogUtils.Log($"{to.Name}翻译完成，文件路径：{PathUtils.OutputPath}\\{to.Name}.json");
             return true;
@@ -116,7 +131,8 @@ namespace LocalizationTranslationWPF.Utils
 
         public static async Task<bool> AITranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter)
         {
-            var translator = new AITranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint, ConfigUtils.Config.aiModel);
+            var translator = new AITranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint,
+                ConfigUtils.Config.aiModel, ConfigUtils.Config.aiPrompt);
 
             if (from.isoCode == to.isoCode)
             {
@@ -130,13 +146,14 @@ namespace LocalizationTranslationWPF.Utils
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json不存在");
                 return false;
             }
-            var sb = new StringBuilder();
+
             if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
             {
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
                 return false;
             }
-            string result =  await translator.Translate(converter.Serialize(originJson), to);
+
+            string result = await translator.Translate(converter.Serialize(originJson), to);
             Dictionary<string, string>? dic;
             try
             {
@@ -151,10 +168,12 @@ namespace LocalizationTranslationWPF.Utils
                 LogUtils.LogError($"{from.Name}翻译失败，ai翻译结果格式错误");
                 return false;
             }
+
             if (!Directory.Exists(PathUtils.OutputPath))
             {
                 Directory.CreateDirectory(PathUtils.OutputPath);
             }
+
             IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
             LogUtils.Log($"{to.Name}翻译完成，文件路径：{PathUtils.OutputPath}\\{to.Name}.json");
             return true;
@@ -165,26 +184,30 @@ namespace LocalizationTranslationWPF.Utils
             var sourcePath = $"{PathUtils.CombineSourcePath}\\{pair.Name}.json";
             var newPath = $"{PathUtils.OutputPath}\\{pair.Name}.json";
             var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
-            if(dictConverter == null)
+            if (dictConverter == null)
             {
                 LogUtils.LogError("无法找到转换器");
                 return false;
             }
-            if(!IOUtils.TryInputJson(sourcePath, dictConverter, out var sourceDict) || sourceDict == null)
+
+            if (!IOUtils.TryInputJson(sourcePath, dictConverter, out var sourceDict) || sourceDict == null)
             {
                 LogUtils.LogError($"读取{sourcePath}失败");
                 return false;
             }
+
             if (!IOUtils.TryInputJson(newPath, dictConverter, out var newDict) || newDict == null)
             {
                 LogUtils.LogError($"读取{newPath}失败");
                 return false;
             }
+
             //将newDict合并到sourceDict，如果有重复的key，以newDict为准
             foreach (var kv in newDict)
             {
                 sourceDict[kv.Key] = kv.Value;
             }
+
             IOUtils.OutputJson($"{PathUtils.CombineOutputPath}\\{pair.Name}.json", sourceDict, dictConverter);
             LogUtils.Log($"{pair.Name}合并完成，文件路径：{PathUtils.OutputPath}\\{pair.Name}.json");
             return true;

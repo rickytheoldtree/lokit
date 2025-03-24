@@ -6,12 +6,12 @@ namespace LocalizationTranslationWPF.Utils
 {
     public static class PairUtils
     {
-        private static readonly List<Pair> fallBackList = new()
+        private static readonly List<Pair> FallBackList = new()
         {
             new Pair("English", "en"),
-            new Pair("ChineseSimplyfied", "zh-CN")
+            new Pair("ChineseSimplified", "zh-CN")
         };
-        private static Pair allPair = new("All", "All");
+        private static readonly Pair AllPair = new("All", "All");
         public static Dictionary<string, List<Pair>> PairsCache { get; } = LoadAll();
         public static List<Pair> GetPairs(int index)
         {
@@ -24,12 +24,12 @@ namespace LocalizationTranslationWPF.Utils
                 }
                 count++;
             }
-            return fallBackList;
+            return FallBackList;
         }
         public static List<Pair> GetPairsWithAll(int index)
         {
             var list = new List<Pair>(GetPairs(index));
-            list.Insert(0, allPair);
+            list.Insert(0, AllPair);
             return list;
         }
         private static Dictionary<string, List<Pair>> LoadAll()

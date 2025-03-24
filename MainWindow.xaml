@@ -3,14 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:LocalizationTranslationWPF"
         mc:Ignorable="d"
-        Title="本地化工具 - LYQ" MinWidth="600" MinHeight="500" Width="600" Height="480">
+        Title="本地化工具 - LYQ" MinWidth="600" MinHeight="540" Width="600" Height="480">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
-        <TabControl x:Name="tabControl" SelectionChanged="tabControl_SelectionChanged" Margin="10,10,10,215" MinHeight="240">
+        <TabControl x:Name="TabControl" SelectionChanged="TabControlSelectionChanged" Margin="10,10,10,215" MinHeight="240">
             <TabItem Header="翻译">
                 <Grid Background="White" VerticalAlignment="Top">
                     <Grid.ColumnDefinitions>
@@ -18,38 +14,38 @@
                         <ColumnDefinition Width="130*"/>
                         <ColumnDefinition Width="102*"/>
                     </Grid.ColumnDefinitions>
-                    <Button x:Name="btnStart" Content="开始" Margin="0,20,0,0" VerticalAlignment="Top" Width="166" Height="23" Click="btnStart_Click" HorizontalAlignment="Left" Grid.Column="2" UseLayoutRounding="False"/>
-                    <ComboBox x:Name="sourceLangComboBox" HorizontalAlignment="Left" Margin="5,20,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="sourceLangComboBox_SelectionChanged" DisplayMemberPath="Name" Grid.Column="1" Height="21"/>
-                    <Label x:Name="label3" Content="翻译源语言" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Height="25" Width="70"/>
-                    <ComboBox x:Name="targetLangComboBox" HorizontalAlignment="Left" Margin="5,50,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="targetLangComboBox_SelectionChanged" DisplayMemberPath="Name" Grid.Column="1" Height="21"/>
-                    <Label x:Name="label4" Content="目标语言" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Height="25" Width="58"/>
-                    <Button x:Name="btnOpenInput" Content="语言源文件夹" HorizontalAlignment="Left" Margin="0,50,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenInput_Click" Grid.Column="2"/>
-                    <Button x:Name="btnOpenOutput" Content="输出文件夹" HorizontalAlignment="Left" Margin="0,80,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenOutput_Click" Grid.Column="2"/>
-                    <Button x:Name="btnSimplified2Traditional" Content="简=&gt;繁" HorizontalAlignment="Left" Margin="5,110,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnSimplified2Traditional_Click" Grid.Column="1"/>
-                    <Button x:Name="btnCombine" Content="合并" HorizontalAlignment="Left" Margin="5,140,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="btnCombine_Click" Grid.Column="1"/>
-                    <Button x:Name="btnOpenCombineSourceFolder" Content="合并源文件夹" HorizontalAlignment="Left" Margin="0,110,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenCombineSourceFolder_Click" Grid.Column="2"/>
-                    <Button x:Name="btnOpenCombineOutputFolder" Content="合并输出文件夹" HorizontalAlignment="Left" Margin="0,140,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenCombineOutputFolder_Click" Grid.Column="2"/>
-                    <ComboBox x:Name="translateMethodComboBox" HorizontalAlignment="Left" Margin="5,80,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="translateMethodComboBox_SelectionChanged" Grid.Column="1" Height="21"/>
-                    <Label x:Name="label5" Content="翻译方式" HorizontalAlignment="Right" Margin="0,80,0,0" VerticalAlignment="Top" Height="25" Width="58"/>
+                    <Button x:Name="BtnStart" Content="开始" Margin="0,20,0,0" VerticalAlignment="Top" Width="166" Height="23" Click="BtnStartClick" HorizontalAlignment="Left" Grid.Column="2" UseLayoutRounding="False"/>
+                    <ComboBox x:Name="SourceLangComboBox" HorizontalAlignment="Left" Margin="5,20,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="SourceLangComboBoxSelectionChanged" DisplayMemberPath="Name" Grid.Column="1" Height="21"/>
+                    <Label Grid.Column="0" x:Name="Label3" Content="翻译源语言" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Height="25" Width="70"/>
+                    <ComboBox x:Name="TargetLangComboBox" HorizontalAlignment="Left" Margin="5,50,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="TargetLangComboBoxSelectionChanged" DisplayMemberPath="Name" Grid.Column="1" Height="21"/>
+                    <Label Grid.Column="0" x:Name="Label4" Content="目标语言" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Height="25" Width="58"/>
+                    <Button x:Name="BtnOpenInput" Content="语言源文件夹" HorizontalAlignment="Left" Margin="0,50,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="BtnOpenInputClick" Grid.Column="2"/>
+                    <Button x:Name="BtnOpenOutput" Content="输出文件夹" HorizontalAlignment="Left" Margin="0,80,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="BtnOpenOutputClick" Grid.Column="2"/>
+                    <Button x:Name="BtnSimplified2Traditional" Content="简=&gt;繁" HorizontalAlignment="Left" Margin="5,110,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="BtnSimplified2TraditionalClick" Grid.Column="1"/>
+                    <Button x:Name="BtnCombine" Content="合并" HorizontalAlignment="Left" Margin="5,140,0,0" VerticalAlignment="Top" Width="164" Height="25" Click="BtnCombineClick" Grid.Column="1"/>
+                    <Button x:Name="BtnOpenCombineSourceFolder" Content="合并源文件夹" HorizontalAlignment="Left" Margin="0,110,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="BtnOpenCombineSourceFolderClick" Grid.Column="2"/>
+                    <Button x:Name="BtnOpenCombineOutputFolder" Content="合并输出文件夹" HorizontalAlignment="Left" Margin="0,140,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="BtnOpenCombineOutputFolderClick" Grid.Column="2"/>
+                    <ComboBox x:Name="TranslateMethodComboBox" HorizontalAlignment="Left" Margin="5,80,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="TranslateMethodComboBoxSelectionChanged" Grid.Column="1" Height="21"/>
+                    <Label Grid.Column="0" x:Name="Label5" Content="翻译方式" HorizontalAlignment="Right" Margin="0,80,0,0" VerticalAlignment="Top" Height="25" Width="58"/>
                 </Grid>
             </TabItem>
             <TabItem Header="编辑">
                 <Grid Background="White">
-                    <DataGrid x:Name="dataGridEditor" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0" Background="White" IsTextSearchCaseSensitive="True" CanUserDeleteRows="False" CanUserAddRows="False"/>
-                    <ComboBox x:Name="comboBoxEditorTargetLanguage" HorizontalAlignment="Left" Margin="55,4,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="comboBoxEditorTargetLanguage_SelectionChanged"/>
-                    <Label x:Name="labelEditorTargetLanguage" Content="语言" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top"/>
-                    <Button x:Name="btnEditorSave" Content="保存" HorizontalAlignment="Left" Margin="180,6,0,0" VerticalAlignment="Top" Click="btnEditorSave_Click"/>
-                    <Button x:Name="btnEditorDeleteKey" Content="删除选中Key(所有语言中)" HorizontalAlignment="Left" Margin="213,6,0,0" VerticalAlignment="Top" Click="btnEditorDeleteKey_Click"/>
-                    <Button x:Name="btnOpenEditorFolder" Content="打开编辑器文件夹" HorizontalAlignment="Left" Margin="359,6,0,0" VerticalAlignment="Top" Click="btnOpenEditorFolder_Click"/>
+                    <DataGrid x:Name="DataGridEditor" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0" Background="White" IsTextSearchCaseSensitive="True" CanUserDeleteRows="False" CanUserAddRows="False"/>
+                    <ComboBox x:Name="ComboBoxEditorTargetLanguage" HorizontalAlignment="Left" Margin="55,4,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="ComboBoxEditorTargetLanguageSelectionChanged"/>
+                    <Label x:Name="LabelEditorTargetLanguage" Content="语言" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top"/>
+                    <Button x:Name="BtnEditorSave" Content="保存" HorizontalAlignment="Left" Margin="180,6,0,0" VerticalAlignment="Top" Click="BtnEditorSaveClick"/>
+                    <Button x:Name="BtnEditorDeleteKey" Content="删除选中Key(所有语言中)" HorizontalAlignment="Left" Margin="213,6,0,0" VerticalAlignment="Top" Click="BtnEditorDeleteKeyClick"/>
+                    <Button x:Name="BtnOpenEditorFolder" Content="打开编辑器文件夹" HorizontalAlignment="Left" Margin="359,6,0,0" VerticalAlignment="Top" Click="BtnOpenEditorFolderClick"/>
                 </Grid>
             </TabItem>
             <TabItem Header="新增">
                 <Grid>
-                    <DataGrid x:Name="dataGridAddNew" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0"/>
-                    <Button x:Name="btnAddNewSave" Content="保存" HorizontalAlignment="Left" Margin="136,6,0,0" VerticalAlignment="Top" Click="btnAddNewSave_Click"/>
-                    <Button x:Name="btnOpenAddNewFolder" Content="打开新增文件夹" HorizontalAlignment="Left" Margin="10,6,0,0" VerticalAlignment="Top" Click="btnOpenAddNewFolder_Click"/>
-                    <Button x:Name="btnAddNewLoad" Content="加载" HorizontalAlignment="Left" Margin="103,6,0,0" VerticalAlignment="Top" Click="btnAddNewLoad_Click"/>
-                    <Button x:Name="btnPasteRow" Content="粘贴行" HorizontalAlignment="Left" Margin="169,6,0,0" VerticalAlignment="Top" Click="btnPasteRow_Click"/>
+                    <DataGrid x:Name="DataGridAddNew" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,30,0,0"/>
+                    <Button x:Name="BtnAddNewSave" Content="保存" HorizontalAlignment="Left" Margin="136,6,0,0" VerticalAlignment="Top" Click="BtnAddNewSaveClick"/>
+                    <Button x:Name="BtnOpenAddNewFolder" Content="打开新增文件夹" HorizontalAlignment="Left" Margin="10,6,0,0" VerticalAlignment="Top" Click="BtnOpenAddNewFolderClick"/>
+                    <Button x:Name="BtnAddNewLoad" Content="加载" HorizontalAlignment="Left" Margin="103,6,0,0" VerticalAlignment="Top" Click="BtnAddNewLoadClick"/>
+                    <Button x:Name="BtnPasteRow" Content="粘贴行" HorizontalAlignment="Left" Margin="169,6,0,0" VerticalAlignment="Top" Click="BtnPasteRowClick"/>
                 </Grid>
             </TabItem>
             <TabItem Header="设置">
@@ -59,24 +55,26 @@
                         <ColumnDefinition Width="130*"/>
                         <ColumnDefinition Width="102*"/>
                     </Grid.ColumnDefinitions>
-                    <ComboBox x:Name="webDriveComboBox" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="webDriveComboBox_SelectionChanged" Grid.Column="1"/>
-                    <ComboBox x:Name="dictConverterComboBox" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="dictConverterComboBox_SelectionChanged" DisplayMemberPath="Name" Grid.Column="1"/>
-                    <Label x:Name="label" Content="浏览器工具" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" AutomationProperties.HelpText=""/>
-                    <Label x:Name="label1" Content="Json格式" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top"/>
-                    <ComboBox x:Name="isoPairComboBox" HorizontalAlignment="Left" Margin="10,80,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="isoPairComboBox_SelectionChanged" DisplayMemberPath="Key" Grid.Column="1"/>
-                    <Label x:Name="label2" Content="文件名-ISO" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,80,0,0"/>
-                    <Button x:Name="btnOpenISO" Content="语言ISO文件夹" HorizontalAlignment="Left" Margin="0,80,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenISO_Click" Grid.Column="2"/>
-                    <Button x:Name="btnDictConverter" Content="格式配置文件夹" HorizontalAlignment="Left" Margin="0,50,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="btnDictConverter_Click" Grid.Column="2"/>
-                    <Button x:Name="btnOpenDriversFolder" Content="驱动文件夹" HorizontalAlignment="Left" VerticalAlignment="Top" Width="166" Height="25" Click="btnOpenDriversFolder_Click" Grid.Column="2" Margin="0,20,0,0"/>
-                    <Label x:Name="label6" Content="API Endpoint(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,110,0,0"/>
-                    <TextBox x:Name="textBoxApiEndpoint" Grid.Column="1" HorizontalAlignment="Left" Margin="10,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="textBoxApiEndpoint_TextChanged" Grid.ColumnSpan="2" Height="20"/>
-                    <Label x:Name="label7" Content="API Key(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,140,0,0"/>
-                    <TextBox x:Name="textBoxApiKey" Grid.Column="1" HorizontalAlignment="Left" Margin="10,143,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="textBoxApiKey_TextChanged" Grid.ColumnSpan="2" Height="20"/>
-                    <Label x:Name="label8" Content="Model(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,170,0,0"/>
-                    <TextBox x:Name="textBoxModel" Grid.Column="1" HorizontalAlignment="Left" Margin="10,173,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="textBoxModel_TextChanged" Grid.ColumnSpan="2" Height="20"/>
+                    <ComboBox x:Name="WebDriveComboBox" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="WebDriveComboBoxSelectionChanged" Grid.Column="1"/>
+                    <ComboBox x:Name="DictConverterComboBox" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="DictConverterComboBoxSelectionChanged" DisplayMemberPath="Name" Grid.Column="1"/>
+                    <Label Grid.Column="0" x:Name="Label" Content="浏览器工具" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" AutomationProperties.HelpText=""/>
+                    <Label Grid.Column="0" x:Name="Label1" Content="Json格式" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top"/>
+                    <ComboBox x:Name="IsoPairComboBox" HorizontalAlignment="Left" Margin="10,80,0,0" VerticalAlignment="Top" Width="166" SelectionChanged="IsoPairComboBoxSelectionChanged" DisplayMemberPath="Key" Grid.Column="1"/>
+                    <Label Grid.Column="0" x:Name="Label2" Content="文件名-ISO" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,80,0,0"/>
+                    <Button x:Name="BtnOpenIso" Content="语言ISO文件夹" HorizontalAlignment="Left" Margin="0,80,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="BtnOpenIsoClick" Grid.Column="2"/>
+                    <Button x:Name="BtnDictConverter" Content="格式配置文件夹" HorizontalAlignment="Left" Margin="0,50,0,0" VerticalAlignment="Top" Width="166" Height="25" Click="BtnDictConverterClick" Grid.Column="2"/>
+                    <Button x:Name="BtnOpenDriversFolder" Content="驱动文件夹" HorizontalAlignment="Left" VerticalAlignment="Top" Width="166" Height="25" Click="BtnOpenDriversFolderClick" Grid.Column="2" Margin="0,20,0,0"/>
+                    <Label Grid.Column="0" x:Name="Label6" Content="API Endpoint(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,110,0,0"/>
+                    <TextBox x:Name="TextBoxApiEndpoint" Grid.Column="1" HorizontalAlignment="Left" Margin="10,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="TextBoxApiEndpointTextChanged" Grid.ColumnSpan="2" Height="20"/>
+                    <Label Grid.Column="0" x:Name="Label7" Content="API Key(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,140,0,0"/>
+                    <TextBox x:Name="TextBoxApiKey" Grid.Column="1" HorizontalAlignment="Left" Margin="10,143,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="TextBoxApiKeyTextChanged" Grid.ColumnSpan="2" Height="20"/>
+                    <Label Grid.Column="0" x:Name="Label8" Content="Model(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,170,0,0"/>
+                    <TextBox x:Name="TextBoxModel" Grid.Column="1" HorizontalAlignment="Left" Margin="10,173,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="TextBoxModelTextChanged" Grid.ColumnSpan="2" Height="20"/>
+                    <Label Grid.Column="0" x:Name="Label9" Content="输入提示" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,200,0,0"/>
+                    <TextBox x:Name="TextBoxPrompt" Grid.Column="1" HorizontalAlignment="Left" Margin="10,203,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="TextBoxPromptTextChanged" Grid.ColumnSpan="2" Height="20"/>
                 </Grid>
             </TabItem>
         </TabControl>
-        <RichTextBox x:Name="logBox" Background="Black" IsReadOnly="True" IsUndoEnabled="False" VerticalAlignment="Bottom" Height="200" MinWidth="0" Margin="10,10,10,10"/>
+        <RichTextBox x:Name="LogBox" Background="Black" IsReadOnly="True" IsUndoEnabled="False" VerticalAlignment="Bottom" Height="200" MinWidth="0" Margin="10,10,10,10"/>
     </Grid>
 </Window>

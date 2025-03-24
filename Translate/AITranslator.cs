@@ -11,23 +11,24 @@ namespace LocalizationTranslationWPF.Translate
 {
     public class AITranslator
     {
-        public const string prompt = "请将 {0} 翻译成 {1}，只回答我json格式，不要回答额外信息，也不用加json的markdown";
+        private const string Prompt = "请将 {0} 翻译成 {1}，只回答我json格式，不要回答额外信息，也不用加json的markdown";
 
         // Replace with your actual OpenAI API key
         private readonly string apiKey;
         private readonly string endpoint;
         private readonly string modelName;
-        public AITranslator(string apiKey, string endpoint, string modelName)
+        private readonly string prompt;
+        public AITranslator(string apiKey, string endpoint, string modelName, string prompt)
         {
             this.apiKey = apiKey;
             this.endpoint = endpoint;
             this.modelName = modelName;
-
+            this.prompt = prompt;
         }
         public async Task<string> Translate(string text, Pair to)
         {
             // Format the prompt with the input text and target language (to.Name)
-            var contentText = string.Format(prompt, text, to.Name);
+            var contentText = string.Format(Prompt, text, to.Name);
 
             // Prepare the request payload
             var requestBody = new
@@ -35,10 +36,9 @@ namespace LocalizationTranslationWPF.Translate
                 model = modelName,
                 messages = new[]
                 {
-                    new { role = "system", content = "You are a helpful translation assistant." },
+                    new { role = "system", content = prompt },
                     new { role = "user", content = contentText }
-                },
-                stream = false,
+                }
             };
 
             var jsonRequestBody = JsonConvert.SerializeObject(requestBody);

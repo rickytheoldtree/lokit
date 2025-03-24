@@ -12,58 +12,100 @@ namespace LocalizationTranslationWPF.Utils
     {
         public static Config Config => config ??= Load();
         private static Config? config;
-        public static EventProperty<WebDriverType> WebDriver { get; } = new EventProperty<WebDriverType>(Config.webDriverType, type =>
-        {
-            Config.webDriverType = type;
-            Save();
-        });
 
-        public static EventProperty<Type> DictConverter { get; }
-            = new EventProperty<Type>(DictConverterUtils.GetConverterType(Config.dictConverter.type), type =>
+        static ConfigUtils()
+        {
+            WebDriver.SetWithoutInvoke(Config.webDriverType);
+            WebDriver.Register(type =>
+            {
+                Config.webDriverType = type;
+                Save();
+            });
+
+            DictConverter.SetWithoutInvoke(DictConverterUtils.GetConverterType(Config.dictConverter.type));
+            DictConverter.Register(type =>
             {
                 Config.dictConverter = new DictConverterType(type);
                 Save();
             });
-        public static EventProperty<int> IsoPairIndex { get; } = new EventProperty<int>(Config.isoPairIndex, index =>
-        {
-            Config.isoPairIndex = index;
-            Save();
-        });
-        public static EventProperty<int> SourceLangIndex { get; } = new EventProperty<int>(0, index =>
-        {
-            SourceLang = PairUtils.GetPairs(IsoPairIndex.Value)[index];
-        });
-        public static EventProperty<int> TargetLangIndex { get; } = new EventProperty<int>(0, index =>
-        {
-            TargetLang = PairUtils.GetPairsWithAll(IsoPairIndex.Value)[index];
-        });
-        public static EventProperty<TranslateMethod> TranslateMethod { get; } = new EventProperty<TranslateMethod>(Config.translateMethod, method =>
-        {
-            Config.translateMethod = method;
-            Save();
-        });
 
-        public static EventProperty<string> ApiEndpoint { get; } = new EventProperty<string>(Config.aiEndpoint, value =>
-        {
-            Config.aiEndpoint = value;
-            Save();
-        });
-        public static EventProperty<string> ApiKey { get; } = new EventProperty<string>(Config.aiAPIKey, value =>
-        {
-            Config.aiAPIKey = value;
-            Save();
-        });
-        public static EventProperty<string> AIModel { get; } = new EventProperty<string>(Config.aiModel, value =>
-        {
-            Config.aiModel = value;
-            Save();
-        });
+            IsoPairIndex.SetWithoutInvoke(Config.isoPairIndex);
+            IsoPairIndex.Register(index =>
+            {
+                Config.isoPairIndex = index;
+                Save();
+            });
+
+            SourceLangIndex.SetWithoutInvoke(0);
+            SourceLangIndex.Register(index => { SourceLang = PairUtils.GetPairs(IsoPairIndex.Value)[index]; });
+
+            TargetLangIndex.SetWithoutInvoke(0);
+            TargetLangIndex.Register(index => { TargetLang = PairUtils.GetPairsWithAll(IsoPairIndex.Value)[index]; });
+
+            TranslateMethod.SetWithoutInvoke(Config.translateMethod);
+            TranslateMethod.Register(method =>
+            {
+                Config.translateMethod = method;
+                Save();
+            });
+
+            ApiEndpoint.SetWithoutInvoke(Config.aiEndpoint);
+            ApiEndpoint.Register(value =>
+            {
+                Config.aiEndpoint = value;
+                Save();
+            });
+
+            ApiKey.SetWithoutInvoke(Config.aiAPIKey);
+            ApiKey.Register(value =>
+            {
+                Config.aiAPIKey = value;
+                Save();
+            });
+
+            AIModel.SetWithoutInvoke(Config.aiModel);
+            AIModel.Register(value =>
+            {
+                Config.aiModel = value;
+                Save();
+            });
+
+            AIPrompt.SetWithoutInvoke(Config.aiPrompt);
+            AIPrompt.Register(value =>
+            {
+                Config.aiPrompt = value;
+                Save();
+            });
+        }
+
+        public static BindableProperty<WebDriverType> WebDriver { get; } = new();
+
+        public static BindableProperty<Type> DictConverter { get; } = new();
+
+        public static BindableProperty<int> IsoPairIndex { get; } = new();
+
+        public static BindableProperty<int> SourceLangIndex { get; } = new();
+
+        public static BindableProperty<int> TargetLangIndex { get; } = new();
+
+        public static BindableProperty<TranslateMethod> TranslateMethod { get; } = new();
+
+        public static BindableProperty<string> ApiEndpoint { get; } = new();
+
+        public static BindableProperty<string> ApiKey { get; } = new();
+
+        public static BindableProperty<string> AIModel { get; } = new();
+
+        public static BindableProperty<string> AIPrompt { get; } = new();
+
         public static Pair SourceLang { get; private set; }
         public static Pair TargetLang { get; private set; }
+
         private static void Save()
         {
             File.WriteAllText(PathUtils.ConfigPath, JsonConvert.SerializeObject(Config));
         }
+
         private static Config Load()
         {
             if (File.Exists(PathUtils.ConfigPath))

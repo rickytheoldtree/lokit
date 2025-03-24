@@ -1,25 +1,20 @@
-﻿using LocalizationTranslationWPF.DictConverter;
+﻿using System;
+using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LocalizationTranslationWPF.Translate
 {
     public static class GoogleTranslateTask
     {
-        public static async Task Run(MainWindow mainWindow)
+        public static async Task Run()
         {
-            mainWindow.SetUILock(true);
             await Task.Run(async () =>
             {
                 var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if (dictConverter == null)
                 {
-                    LogUtils.LogError("字典转换器类型错误");
-                    return;
+                    throw new Exception("字典转换器类型错误");
                 }
                 var sourceLang = ConfigUtils.SourceLang;
                 var targetLang = ConfigUtils.TargetLang;
@@ -30,8 +25,7 @@ namespace LocalizationTranslationWPF.Translate
                         targetLang = pair;
                         if (!await TaskUtils.GoogleTranslateTask(sourceLang, targetLang, dictConverter))
                         {
-                            LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            break;
+                            throw new Exception($"翻译{targetLang.Name}失败");
                         }
                     }
                 }
@@ -41,7 +35,6 @@ namespace LocalizationTranslationWPF.Translate
                 }
                 GoogleTranslator.Close();
             });
-            mainWindow.SetUILock(false);
         }
     }
 }

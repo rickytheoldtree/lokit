@@ -1,5 +1,4 @@
-﻿using IDictConverter;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace DictConverter
@@ -11,7 +10,7 @@ namespace DictConverter
         {
             return JsonConvert.SerializeObject(dict);
         }
-        override public string ToString()
+        public override string ToString()
         {
             return NameForShow;
         }
