@@ -74,38 +74,41 @@ namespace LocalizationTranslationWPF.Translate
 
             //每隔1秒尝试1次获取翻译结果，最多尝试10次
             var count = 0;
-            bool success = false;
-            while (count < 10)
+            IWebElement? element = null;
+
+            while (element == null)
             {
                 try
                 {
-                    // find button aria-label="Copy translation"
-                    var button = webDriver?.FindElement(By.CssSelector("button[aria-label='Copy translation']"));
-                    if (button != null)
-                    {
-                        button.Click();
-                        success = true;
-                        break;
-                    }
+                    element = webDriver?.FindElement(By.CssSelector("button[aria-label='Copy translation']"));
                 }
                 catch (NoSuchWindowException e)
                 {
                     LogUtils.LogError(e.Message);
                     return false;
                 }
+                catch (NoSuchElementException)
+                {
+                    // ignore
+                }
 
                 count++;
-                await Task.Delay(1000, token);
+                if (element != null)
+                {
+                    element.Click();
+                    break;
+                }
+
+                if (count > 100)
+                {
+                    LogUtils.LogError("尝试100次后还没翻译完，检查一下网络");
+                    return false;
+                }
+
+                await Task.Delay(100, token);
             }
 
-            if (!success)
-            {
-                //弹窗
-                LogUtils.LogError("尝试10次后还没翻译完，检查一下网络，或者换一个vpn吧");
-                return false;
-            }
-
-            await Task.Delay(1000, token);
+            await Task.Delay(500, token);
 
             //访问Windows粘贴板
             var text = ThreadUtils.GetClipboard();
