@@ -70,7 +70,7 @@
                     <TextBox x:Name="TextBoxApiKey" Grid.Column="1" HorizontalAlignment="Left" Margin="10,143,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="TextBoxApiKeyTextChanged" Grid.ColumnSpan="2" Height="20"/>
                     <Label Grid.Column="0" x:Name="Label8" Content="Model(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,170,0,0"/>
                     <TextBox x:Name="TextBoxModel" Grid.Column="1" HorizontalAlignment="Left" Margin="10,173,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="TextBoxModelTextChanged" Grid.ColumnSpan="2" Height="20"/>
-                    <Label Grid.Column="0" x:Name="Label9" Content="输入提示" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,200,0,0"/>
+                    <Label Grid.Column="0" x:Name="Label9" Content="Prompt(AI)" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,200,0,0"/>
                     <TextBox x:Name="TextBoxPrompt" Grid.Column="1" HorizontalAlignment="Left" Margin="10,203,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="416" TextChanged="TextBoxPromptTextChanged" Grid.ColumnSpan="2" Height="20"/>
                 </Grid>
             </TabItem>

@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using LocalizationTranslationWPF.Data;
@@ -25,7 +26,7 @@ namespace LocalizationTranslationWPF.Translate
             this.modelName = modelName;
             this.prompt = prompt;
         }
-        public async Task<string> Translate(string text, Pair to)
+        public async Task<string> Translate(string text, Pair to, CancellationToken token)
         {
             // Format the prompt with the input text and target language (to.Name)
             var contentText = string.Format(Prompt, text, to.Name);
@@ -43,35 +44,36 @@ namespace LocalizationTranslationWPF.Translate
 
             var jsonRequestBody = JsonConvert.SerializeObject(requestBody);
 
-            using (var client = new HttpClient())
+            using var client = new HttpClient();
+            // Set the authorization header with your API key
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            var httpContent = new StringContent(jsonRequestBody, Encoding.UTF8, "application/json");
+
+            // Send POST request to the ChatGPT API endpoint
+            var response = await client.PostAsync(endpoint, httpContent, token);
+            if (token.IsCancellationRequested)
             {
-                // Set the authorization header with your API key
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-                var httpContent = new StringContent(jsonRequestBody, Encoding.UTF8, "application/json");
-
-                // Send POST request to the ChatGPT API endpoint
-                var response = await client.PostAsync(endpoint, httpContent);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    // Read the response string (which should be in JSON format as requested)
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    // Optionally, parse the JSON response to extract the translation.
-                    // For example, you might use JObject from Newtonsoft.Json:
-                    var jsonResponse = JObject.Parse(responseContent);
-                    var translatedText = jsonResponse["choices"]?[0]?["message"]?["content"]?.ToString();
-
-                    return translatedText;
-                }
-                else
-                {
-                    // Handle error response
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"API request failed: {response.StatusCode}, {errorContent}");
-                }
+                return string.Empty;
             }
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync(token);
+                if (token.IsCancellationRequested)
+                {
+                    return string.Empty;
+                }
+                var jsonResponse = JObject.Parse(responseContent);
+                return jsonResponse["choices"]?[0]?["message"]?["content"]?.ToString();
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync(token);
+            if (token.IsCancellationRequested)
+            {
+                return string.Empty;
+            }
+            throw new Exception($"API request failed: {response.StatusCode}, {errorContent}");
         }
     }
 }

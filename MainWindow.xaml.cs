@@ -5,7 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using LocalizationTranslationWPF.Data;
-using System.ComponentModel;
+using System.Threading;
 using LocalizationTranslationWPF.Utils;
 using static LocalizationTranslationWPF.Data.Config;
 
@@ -20,11 +20,6 @@ namespace LocalizationTranslationWPF
         {
             InitializeComponent();
             Init();
-        }
-        protected override void OnClosing(CancelEventArgs e)
-        {
-            base.OnClosing(e);
-            GoogleTranslator.Close();
         }
         private void Init()
         {
@@ -57,28 +52,53 @@ namespace LocalizationTranslationWPF
             TextBoxModel.Text = ConfigUtils.AIModel.Value;
             TextBoxPrompt.Text = ConfigUtils.AIPrompt.Value;
         }
+
+        private CancellationTokenSource? cts;
+        private CancelWindow? cancelWindow;
         private async void BtnStartClick(object sender, RoutedEventArgs e)
         {
             try
             {
+                cts = new CancellationTokenSource();
                 SetUILock(true);
+
+                cancelWindow = new CancelWindow
+                {
+                    Owner = this
+                };
+                cancelWindow.CancelRequested += (_, _) =>
+                {
+                    cts?.Cancel();
+                };
+                cancelWindow.Show();
+
                 switch (ConfigUtils.TranslateMethod.Value)
                 {
                     case TranslateMethod.GoogleTranslate:
-                        await GoogleTranslateTask.Run();
+                        await GoogleTranslateTask.Run(cts.Token);
                         break;
                     case TranslateMethod.AI:
-                        await AITranslateTask.Run();
+                        await AITranslateTask.Run(cts.Token);
                         break;
                 }
-                SetUILock(false);
+            }
+            catch (OperationCanceledException)
+            {
+                LogUtils.LogError("任务已取消");
             }
             catch (Exception exception)
             {
-                SetUILock(false);
                 LogUtils.LogError(exception.Message);
             }
+            finally
+            {
+                // 任务完成后关闭取消对话框
+                cancelWindow?.Close();
+                cts = null;
+                SetUILock(false);
+            }
         }
+
 
         private void WebDriveComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -146,14 +166,8 @@ namespace LocalizationTranslationWPF
 
         private void SetUILock(bool isLocked)
         {
-            BtnStart.IsEnabled = !isLocked;
-            WebDriveComboBox.IsEnabled = !isLocked;
-            DictConverterComboBox.IsEnabled = !isLocked;
-            IsoPairComboBox.IsEnabled = !isLocked;
-            SourceLangComboBox.IsEnabled = !isLocked;
-            TargetLangComboBox.IsEnabled = !isLocked;
             TabControl.IsEnabled = !isLocked;
-            TranslateMethodComboBox.IsEnabled = !isLocked;
+            BtnStart.IsEnabled = true;
         }
 
         private void BtnDictConverterClick(object sender, RoutedEventArgs e)

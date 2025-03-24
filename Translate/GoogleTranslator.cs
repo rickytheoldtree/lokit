@@ -6,7 +6,7 @@ using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LocalizationTranslationWPF.Translate
@@ -17,20 +17,21 @@ namespace LocalizationTranslationWPF.Translate
         private readonly Config.WebDriverType webDriverType;
         private readonly IWebDriver webDriver;
         private string url = "";
+
         public static GoogleTranslator GetInstance(Config.WebDriverType type)
         {
-
             if (instance == null)
             {
                 instance = new GoogleTranslator(type);
             }
-            else if( instance.webDriverType != type)
+            else if (instance.webDriverType != type)
             {
-                Close();
                 instance = new GoogleTranslator(type);
             }
+
             return instance;
         }
+
         private GoogleTranslator(Config.WebDriverType type)
         {
             webDriverType = Config.WebDriverType.Edge;
@@ -40,24 +41,31 @@ namespace LocalizationTranslationWPF.Translate
                 {
                     default:
                     case Config.WebDriverType.Edge:
-                        webDriver = new EdgeDriver(PathUtils.DriverPath);
+                        var service = EdgeDriverService.CreateDefaultService(PathUtils.DriverPath);
+                        service.HideCommandPromptWindow = true;
+                        webDriver = new EdgeDriver(service);
                         break;
                     case Config.WebDriverType.Chrome:
-                        webDriver = new ChromeDriver(PathUtils.DriverPath);
+                        var chromeService = ChromeDriverService.CreateDefaultService(PathUtils.DriverPath);
+                        chromeService.HideCommandPromptWindow = true;
+                        webDriver = new ChromeDriver(chromeService);
                         break;
                     case Config.WebDriverType.FireFox:
-                        webDriver = new FirefoxDriver(PathUtils.DriverPath);
+                        var fireFoxService = FirefoxDriverService.CreateDefaultService(PathUtils.DriverPath);
+                        fireFoxService.HideCommandPromptWindow = true;
+                        webDriver = new FirefoxDriver(fireFoxService);
                         break;
                 }
             }
             catch
             {
-                webDriver?.Dispose();
+                webDriver?.Quit();
                 throw;
             }
-            
         }
-        public async Task<bool> Translate(string txt, string from, string to, Action<List<string>> callback)
+
+        public async Task<bool> Translate(string txt, string from, string to, Action<List<string>> callback,
+            CancellationToken token)
         {
             url = $"https://translate.google.com/?hl=en&sl={from}" +
                   $"&tl={to}" +
@@ -72,6 +80,7 @@ namespace LocalizationTranslationWPF.Translate
                 LogUtils.LogError(e.Message);
                 return false;
             }
+
             //每隔1秒尝试1次获取翻译结果，最多尝试10次
             var count = 0;
             bool success = false;
@@ -88,40 +97,47 @@ namespace LocalizationTranslationWPF.Translate
                         break;
                     }
                 }
-                catch(Exception e) 
+                catch (Exception e)
                 {
-                    if(e is NoSuchWindowException)
+                    if (e is NoSuchWindowException)
                     {
                         LogUtils.LogError(e.Message);
                         return false;
                     }
                 }
+
                 count++;
-                await Task.Delay(1000);
+                await Task.Delay(1000, token);
+                if (token.IsCancellationRequested)
+                {
+                    return false;
+                }
             }
+
             if (!success)
             {
                 //弹窗
-                Debug.WriteLine("尝试10次后还没翻译完，检查一下网络，或者换一个vpn吧");
+                LogUtils.LogError("尝试10次后还没翻译完，检查一下网络，或者换一个vpn吧");
                 return false;
             }
-            await Task.Delay(1000);
+
+            await Task.Delay(1000, token);
+            if (token.IsCancellationRequested)
+            {
+                return false;
+            }
+
             //访问Windows粘贴板
             var text = ThreadUtils.GetClipboard();
             if (!TaskUtils.Txt2StrList(text, out var values))
             {
                 return false;
             }
-            callback?.Invoke(values);
+
+            callback.Invoke(values);
             return true;
         }
-        public static void Close()
-        {
-            if (instance == null) return;
-            instance.webDriver.Close();
-            instance.webDriver.Quit();
-            instance = null;
-        }
+
         public static string GetUrlSafeString(string str)
         {
             str = str.Replace("%", "%25");

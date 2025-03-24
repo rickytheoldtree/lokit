@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
 using System.Threading.Tasks;
@@ -7,7 +8,7 @@ namespace LocalizationTranslationWPF.Translate
 {
     public static class AITranslateTask
     {
-        public static async Task Run()
+        public static async Task Run(CancellationToken token)
         {
             await Task.Run(async () =>
             {
@@ -23,7 +24,7 @@ namespace LocalizationTranslationWPF.Translate
                     foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
                     {
                         targetLang = pair;
-                        if (!await TaskUtils.AITranslateTask(sourceLang, targetLang, dictConverter))
+                        if (!await TaskUtils.AITranslateTask(sourceLang, targetLang, dictConverter, token))
                         {
                             throw new Exception($"翻译{targetLang.Name}失败");
                         }
@@ -31,9 +32,9 @@ namespace LocalizationTranslationWPF.Translate
                 }
                 else
                 {
-                    await TaskUtils.AITranslateTask(sourceLang, targetLang, dictConverter);
+                    await TaskUtils.AITranslateTask(sourceLang, targetLang, dictConverter, token);
                 }
-            });
+            }, token);
         }
     }
 }

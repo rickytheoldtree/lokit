@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
 using System.Threading.Tasks;
@@ -7,7 +8,7 @@ namespace LocalizationTranslationWPF.Translate
 {
     public static class GoogleTranslateTask
     {
-        public static async Task Run()
+        public static async Task Run(CancellationToken token)
         {
             await Task.Run(async () =>
             {
@@ -23,18 +24,22 @@ namespace LocalizationTranslationWPF.Translate
                     foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
                     {
                         targetLang = pair;
-                        if (!await TaskUtils.GoogleTranslateTask(sourceLang, targetLang, dictConverter))
+                        if (!await TaskUtils.GoogleTranslateTask(sourceLang, targetLang, dictConverter, token))
                         {
-                            throw new Exception($"翻译{targetLang.Name}失败");
+                            LogUtils.LogError($"翻译{targetLang.Name}失败");
+                        }
+
+                        if (token.IsCancellationRequested)
+                        {
+                            break;
                         }
                     }
                 }
                 else
                 {
-                    await TaskUtils.GoogleTranslateTask(sourceLang, targetLang, dictConverter);
+                    await TaskUtils.GoogleTranslateTask(sourceLang, targetLang, dictConverter, token);
                 }
-                GoogleTranslator.Close();
-            });
+            }, token);
         }
     }
 }

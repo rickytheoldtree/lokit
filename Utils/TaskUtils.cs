@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.Translate;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace LocalizationTranslationWPF.Utils
             if (startIndex == -1)
             {
                 values = new List<string>();
-                Debug.WriteLine("找不到分隔符");
+                LogUtils.LogError("找不到分隔符");
                 return false;
             }
 
@@ -36,18 +37,16 @@ namespace LocalizationTranslationWPF.Utils
             return true;
         }
 
-        public static async Task<bool> GoogleTranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter)
+        public static async Task<bool> GoogleTranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
         {
             GoogleTranslator translator;
             try
             {
                 translator = GoogleTranslator.GetInstance(ConfigUtils.WebDriver.Value);
             }
-            catch
+            catch (Exception e)
             {
-                LogUtils.LogError(
-                    $"{ConfigUtils.WebDriver.Value} 无法正常工作，请下载对应浏览器版本的WebDriver到根目录下的web-drivers里(搜索\"WebDriver {ConfigUtils.WebDriver.Value}\")");
-                return false;
+                throw new Exception($"无法初始化WebDriver：{e.Message}");
             }
 
             if (from.isoCode == to.isoCode)
@@ -87,7 +86,7 @@ namespace LocalizationTranslationWPF.Utils
                 else
                 {
                     if (!await translator.Translate(sb.ToString(), from.isoCode, to.isoCode,
-                            (result) => { values.AddRange(result); }))
+                            (result) => { values.AddRange(result); }, token))
                     {
                         return false;
                     }
@@ -100,7 +99,7 @@ namespace LocalizationTranslationWPF.Utils
             if (sb.Length > 0)
             {
                 if (!await translator.Translate(sb.ToString(), from.isoCode, to.isoCode,
-                        (result) => { values.AddRange(result); }))
+                        (result) => { values.AddRange(result); }, token))
                 {
                     return false;
                 }
@@ -129,7 +128,7 @@ namespace LocalizationTranslationWPF.Utils
             return true;
         }
 
-        public static async Task<bool> AITranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter)
+        public static async Task<bool> AITranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
         {
             var translator = new AITranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint,
                 ConfigUtils.Config.aiModel, ConfigUtils.Config.aiPrompt);
@@ -153,7 +152,11 @@ namespace LocalizationTranslationWPF.Utils
                 return false;
             }
 
-            string result = await translator.Translate(converter.Serialize(originJson), to);
+            string result = await translator.Translate(converter.Serialize(originJson), to, token);
+            if (token.IsCancellationRequested)
+            {
+                return false;
+            }
             Dictionary<string, string>? dic;
             try
             {
