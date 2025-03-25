@@ -33,7 +33,7 @@ namespace LocalizationTranslationWPF.Translate
             this.modelName = modelName;
             this.prompt = prompt;
         }
-        
+
         public static async Task Run(CancellationToken token)
         {
             await Task.Run(async () =>
@@ -43,29 +43,61 @@ namespace LocalizationTranslationWPF.Translate
                 {
                     throw new Exception("字典转换器类型错误");
                 }
+
                 var sourceLang = ConfigUtils.SourceLang;
                 var targetLang = ConfigUtils.TargetLang;
                 using var translator = new AIApiTranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint,
                     ConfigUtils.Config.aiModel, ConfigUtils.Config.aiPrompt);
-                if (targetLang.Name == "All")
+
+                switch (ConfigUtils.TargetLangAmount.Value)
                 {
-                    foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
+                    case Config.TargetLangAmount.All:
                     {
-                        targetLang = pair;
-                        if (!await translator.AITranslateTask(sourceLang, targetLang, dictConverter, token))
+                        foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
                         {
-                            throw new Exception($"翻译{targetLang.Name}失败");
+                            token.ThrowIfCancellationRequested();
+                            targetLang = pair;
+                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
+                                    token))
+                            {
+                                LogUtils.LogError($"翻译{targetLang.Name}失败");
+                            }
                         }
+                        break;
                     }
-                }
-                else
-                {
-                    await translator.AITranslateTask(sourceLang, targetLang, dictConverter, token);
+                    case Config.TargetLangAmount.Remain:
+                    {
+                        var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+                        var index = pairs.FindIndex(p => p.isoCode == targetLang.isoCode);
+                        if (index == -1)
+                        {
+                            LogUtils.LogError("目标语言不在剩余语言列表中");
+                            return;
+                        }
+
+                        for (var i = index; i < pairs.Count; i++)
+                        {
+                            token.ThrowIfCancellationRequested();
+                            targetLang = pairs[i];
+                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
+                                    token))
+                            {
+                                LogUtils.LogError($"翻译{targetLang.Name}失败");
+                            }
+                        }
+
+                        break;
+                    }
+                    case Config.TargetLangAmount.Single:
+                    default:
+                        await translator.TranslateAsync(sourceLang, targetLang, dictConverter, token);
+                        break;
                 }
             }, token);
         }
 
-        private async Task<bool> AITranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
+        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
+            CancellationToken token)
         {
             if (from.isoCode == to.isoCode)
             {
@@ -91,6 +123,7 @@ namespace LocalizationTranslationWPF.Translate
             {
                 return false;
             }
+
             Dictionary<string, string>? dic;
             try
             {
@@ -154,6 +187,7 @@ namespace LocalizationTranslationWPF.Translate
                 {
                     return string.Empty;
                 }
+
                 var jsonResponse = JObject.Parse(responseContent);
                 return jsonResponse["choices"]?[0]?["message"]?["content"]?.ToString();
             }
@@ -163,12 +197,12 @@ namespace LocalizationTranslationWPF.Translate
             {
                 return string.Empty;
             }
+
             throw new Exception($"API request failed: {response.StatusCode}, {errorContent}");
         }
 
         public void Dispose()
         {
-            
         }
     }
 }

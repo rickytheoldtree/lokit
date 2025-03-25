@@ -40,12 +40,19 @@ namespace LocalizationTranslationWPF.Utils
             SourceLangIndex.Register(index => { SourceLang = PairUtils.GetPairs(IsoPairIndex.Value)[index]; });
 
             TargetLangIndex.SetWithoutInvoke(0);
-            TargetLangIndex.Register(index => { TargetLang = PairUtils.GetPairsWithAll(IsoPairIndex.Value)[index]; });
+            TargetLangIndex.Register(index => { TargetLang = PairUtils.GetPairs(IsoPairIndex.Value)[index]; });
 
             TranslateMethod.SetWithoutInvoke(Config.translateMethod);
             TranslateMethod.Register(method =>
             {
                 Config.translateMethod = method;
+                Save();
+            });
+            
+            TargetLangAmount.SetWithoutInvoke(Config.targetLangAmount);
+            TargetLangAmount.Register(amount =>
+            {
+                Config.targetLangAmount = amount;
                 Save();
             });
 
@@ -89,6 +96,8 @@ namespace LocalizationTranslationWPF.Utils
         public static BindableProperty<int> TargetLangIndex { get; } = new();
 
         public static BindableProperty<TranslateMethod> TranslateMethod { get; } = new();
+        
+        public static BindableProperty<TargetLangAmount> TargetLangAmount { get; } = new();
 
         public static BindableProperty<string> ApiEndpoint { get; } = new();
 
@@ -112,18 +121,15 @@ namespace LocalizationTranslationWPF.Utils
             {
                 try
                 {
-                    var config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(PathUtils.ConfigPath));
-                    return config ?? new Config();
+                    var c = JsonConvert.DeserializeObject<Config>(File.ReadAllText(PathUtils.ConfigPath));
+                    return c ?? new Config();
                 }
                 catch (Exception)
                 {
                     return new Config();
                 }
             }
-            else
-            {
-                return new Config();
-            }
+            return new Config();
         }
     }
 }

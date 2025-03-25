@@ -92,6 +92,13 @@ public abstract class WebDriverTranslator : IDisposable
             return false;
         }
     }
+
+    protected static Task RandomDelay(Random random)
+    {
+        var randomDelay = random.Next(3000, 8000);
+        LogUtils.Log($"随机延迟: {randomDelay}ms");
+        return Task.Delay(randomDelay);
+    }
     public void Dispose()
     {
         webDriver?.Quit();

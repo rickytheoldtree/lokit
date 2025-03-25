@@ -31,15 +31,15 @@ namespace LocalizationTranslationWPF.Translate
                 var sourceLang = ConfigUtils.SourceLang;
                 var targetLang = ConfigUtils.TargetLang;
                 using var translator = new GoogleWebDriverTranslator(ConfigUtils.WebDriver.Value);
-                switch (targetLang.Name)
+                switch (ConfigUtils.TargetLangAmount.Value)
                 {
-                    case "All":
+                    case Config.TargetLangAmount.All:
                     {
                         foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
                         {
                             token.ThrowIfCancellationRequested();
                             targetLang = pair;
-                            if (!await translator.GoogleTranslateTask(sourceLang, targetLang, dictConverter,
+                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
                                     token))
                             {
                                 LogUtils.LogError($"翻译{targetLang.Name}失败");
@@ -48,14 +48,37 @@ namespace LocalizationTranslationWPF.Translate
 
                         break;
                     }
+                    case Config.TargetLangAmount.Remain:
+                    {
+                        var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+                        var index = pairs.FindIndex(p => p.isoCode == targetLang.isoCode);
+                        if (index == -1)
+                        {
+                            LogUtils.LogError("目标语言不在剩余语言列表中");
+                            return;
+                        }
+
+                        for (var i = index; i < pairs.Count; i++)
+                        {
+                            token.ThrowIfCancellationRequested();
+                            targetLang = pairs[i];
+                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
+                                    token))
+                            {
+                                LogUtils.LogError($"翻译{targetLang.Name}失败");
+                            }
+                        }
+                        break;
+                    }
+                    case Config.TargetLangAmount.Single:
                     default:
-                        await translator.GoogleTranslateTask(sourceLang, targetLang, dictConverter, token);
+                        await translator.TranslateAsync(sourceLang, targetLang, dictConverter, token);
                         break;
                 }
             }, token);
         }
 
-        private async Task<bool> GoogleTranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
+        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
         {
             if (from.isoCode == to.isoCode)
             {

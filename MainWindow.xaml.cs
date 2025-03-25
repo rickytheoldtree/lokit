@@ -40,12 +40,15 @@ namespace LocalizationTranslationWPF
             SourceLangComboBox.SelectedIndex = ConfigUtils.SourceLangIndex.Value;
             ToolTipService.SetInitialShowDelay(SourceLangComboBox, 0);
 
-            TargetLangComboBox.ItemsSource = PairUtils.GetPairsWithAll(ConfigUtils.IsoPairIndex.Value);
+            TargetLangComboBox.ItemsSource = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
             TargetLangComboBox.SelectedIndex = ConfigUtils.TargetLangIndex.Value;
             ToolTipService.SetInitialShowDelay(TargetLangComboBox, 0);
 
             TranslateMethodComboBox.ItemsSource = Enum.GetValues(typeof(TranslateMethod)).Cast<TranslateMethod>();
             TranslateMethodComboBox.SelectedIndex = (int)ConfigUtils.TranslateMethod.Value;
+            
+            TargetLangAmountComboBox.ItemsSource = Enum.GetValues(typeof(TargetLangAmount)).Cast<TargetLangAmount>();
+            TargetLangAmountComboBox.SelectedIndex = (int)ConfigUtils.TargetLangAmount.Value;
 
             TextBoxApiEndpoint.Text = ConfigUtils.ApiEndpoint.Value;
             TextBoxApiKey.Text = ConfigUtils.ApiKey.Value;
@@ -134,7 +137,7 @@ namespace LocalizationTranslationWPF
             ConfigUtils.IsoPairIndex.Value = IsoPairComboBox.SelectedIndex;
             SourceLangComboBox.ItemsSource = PairUtils.GetPairs(IsoPairComboBox.SelectedIndex);
             SourceLangComboBox.SelectedIndex = 0;
-            TargetLangComboBox.ItemsSource = PairUtils.GetPairsWithAll(IsoPairComboBox.SelectedIndex);
+            TargetLangComboBox.ItemsSource = PairUtils.GetPairs(IsoPairComboBox.SelectedIndex);
             TargetLangComboBox.SelectedIndex = 0;
             IsoPairComboBox.ToolTip = ToolTipUtils.IsoPairToolTip;
         }
@@ -303,6 +306,14 @@ namespace LocalizationTranslationWPF
         private void TextBoxPromptTextChanged(object sender, TextChangedEventArgs e)
         {
             ConfigUtils.AIPrompt.Value = TextBoxPrompt.Text;
+        }
+
+        private void TargetLangAmountComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!Equals(e.Source, TargetLangAmountComboBox)) return;
+            if (TargetLangAmountComboBox.SelectedIndex == -1) return;
+
+            ConfigUtils.TargetLangAmount.Value = (TargetLangAmount)TargetLangAmountComboBox.SelectedIndex;
         }
     }
 }

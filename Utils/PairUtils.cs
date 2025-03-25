@@ -26,12 +26,6 @@ namespace LocalizationTranslationWPF.Utils
             }
             return FallBackList;
         }
-        public static List<Pair> GetPairsWithAll(int index)
-        {
-            var list = new List<Pair>(GetPairs(index));
-            list.Insert(0, AllPair);
-            return list;
-        }
         private static Dictionary<string, List<Pair>> LoadAll()
         {
             var dict = new Dictionary<string, List<Pair>>();

@@ -43,29 +43,57 @@ namespace LocalizationTranslationWPF.Translate
                 if (!await translator.LoginTask(deepThinking, token))
                     return;
 
-                if (targetLang.Name == "All")
+                switch (ConfigUtils.TargetLangAmount.Value)
                 {
-                    foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
+                    case Config.TargetLangAmount.All:
                     {
-                        targetLang = pair;
-                        if (!await translator.AITranslateTask(sourceLang, targetLang, dictConverter, token))
+                        foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
                         {
-                            throw new Exception($"翻译{targetLang.Name}失败");
+                            token.ThrowIfCancellationRequested();
+                            targetLang = pair;
+                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
+                                    token))
+                            {
+                                LogUtils.LogError($"翻译{targetLang.Name}失败");
+                            }
+
+                            await RandomDelay(random);
                         }
 
-                        var randomDelay = random.Next(5000, 10000);
-                        LogUtils.Log($"随机等待{randomDelay}ms");
-                        await Task.Delay(randomDelay, token);
+                        break;
                     }
-                }
-                else
-                {
-                    await translator.AITranslateTask(sourceLang, targetLang, dictConverter, token);
+                    case Config.TargetLangAmount.Remain:
+                    {
+                        var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+                        var index = pairs.FindIndex(p => p.isoCode == targetLang.isoCode);
+                        if (index == -1)
+                        {
+                            LogUtils.LogError("目标语言不在剩余语言列表中");
+                            return;
+                        }
+
+                        for (var i = index; i < pairs.Count; i++)
+                        {
+                            token.ThrowIfCancellationRequested();
+                            targetLang = pairs[i];
+                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
+                                    token))
+                            {
+                                LogUtils.LogError($"翻译{targetLang.Name}失败");
+                            }
+                            await RandomDelay(random);
+                        }
+                        break;
+                    }
+                    case Config.TargetLangAmount.Single:
+                    default:
+                        await translator.TranslateAsync(sourceLang, targetLang, dictConverter, token);
+                        break;
                 }
             }, token);
         }
 
-        private async Task<bool> AITranslateTask(Pair from, Pair to, IDictConverter.IDictConverter converter,
+        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
             CancellationToken token)
         {
             if (from.isoCode == to.isoCode)
