@@ -39,7 +39,7 @@ namespace LocalizationTranslationWPF.Translate
                 var targetLang = ConfigUtils.TargetLang;
                 using var translator =
                     new DeepSeekWebDriverTranslator(ConfigUtils.WebDriver.Value, ConfigUtils.Config.aiPrompt);
-
+                var random = new Random();
                 if (!await translator.LoginTask(deepThinking, token))
                     return;
 
@@ -52,6 +52,10 @@ namespace LocalizationTranslationWPF.Translate
                         {
                             throw new Exception($"翻译{targetLang.Name}失败");
                         }
+
+                        var randomDelay = random.Next(5000, 10000);
+                        LogUtils.Log($"随机等待{randomDelay}ms");
+                        await Task.Delay(randomDelay, token);
                     }
                 }
                 else
