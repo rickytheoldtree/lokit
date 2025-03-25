@@ -14,16 +14,19 @@ using Newtonsoft.Json.Linq;
 
 namespace LocalizationTranslationWPF.Translate
 {
-    public class AITranslator : IDisposable
+    public class AIApiTranslator : IDisposable
     {
-        private const string Prompt = "请将 {0} 翻译成 {1}，只回答我json格式，不要回答额外信息，也不用加json的markdown";
+        private const string DefaultPrompt =
+            "接下来你将翻译我提供的json格式文件，你需要翻译成纯文本形式的json，一定一定不要markdown代码块，否则对我来说没有意义!" +
+            "如果翻译内容里出现了占位符，请务必保留，请确保翻译后的文本中也有这些标记，且数量不变。" +
+            "那么现在，请将 {0} 翻译成 {1}";
 
         private readonly string apiKey;
         private readonly string endpoint;
         private readonly string modelName;
         private readonly string prompt;
 
-        private AITranslator(string apiKey, string endpoint, string modelName, string prompt)
+        private AIApiTranslator(string apiKey, string endpoint, string modelName, string prompt)
         {
             this.apiKey = apiKey;
             this.endpoint = endpoint;
@@ -42,7 +45,7 @@ namespace LocalizationTranslationWPF.Translate
                 }
                 var sourceLang = ConfigUtils.SourceLang;
                 var targetLang = ConfigUtils.TargetLang;
-                using var translator = new AITranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint,
+                using var translator = new AIApiTranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint,
                     ConfigUtils.Config.aiModel, ConfigUtils.Config.aiPrompt);
                 if (targetLang.Name == "All")
                 {
@@ -116,7 +119,7 @@ namespace LocalizationTranslationWPF.Translate
         private async Task<string> Translate(string text, Pair to, CancellationToken token)
         {
             // Format the prompt with the input text and target language (to.Name)
-            var contentText = string.Format(Prompt, text, to.Name);
+            var contentText = string.Format(DefaultPrompt, text, to.Name);
 
             // Prepare the request payload
             var requestBody = new

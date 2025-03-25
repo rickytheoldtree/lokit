@@ -1,25 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
-using Newtonsoft.Json.Linq;
 using OpenQA.Selenium;
 
 namespace LocalizationTranslationWPF.Translate
 {
     public class DeepSeekWebDriverTranslator : WebDriverTranslator
     {
-        private const string Prompt = "请将 {0} 翻译成 {1}，只回答我json格式，不要回答额外信息，也不用加json的markdown";
+        private const string DefaultPrompt =
+            "接下来你将翻译我提供的json格式文件，你需要翻译成纯文本形式的json，一定一定不要markdown代码块，否则对我来说没有意义!" +
+            "如果翻译内容里出现了占位符，请务必保留，请确保翻译后的文本中也有这些标记，且数量不变。" +
+            "那么现在，请将 {0} 翻译成 {1}";
+
         private readonly string url = "https://chat.deepseek.com/";
         private readonly string prompt;
+
         private DeepSeekWebDriverTranslator(Config.WebDriverType type, string prompt) : base(type)
         {
             this.prompt = prompt;
@@ -37,11 +37,12 @@ namespace LocalizationTranslationWPF.Translate
 
                 var sourceLang = ConfigUtils.SourceLang;
                 var targetLang = ConfigUtils.TargetLang;
-                using var translator = new DeepSeekWebDriverTranslator(ConfigUtils.WebDriver.Value, ConfigUtils.Config.aiPrompt);
-                
-                if(!await translator.LoginTask(deepThinking, token))
+                using var translator =
+                    new DeepSeekWebDriverTranslator(ConfigUtils.WebDriver.Value, ConfigUtils.Config.aiPrompt);
+
+                if (!await translator.LoginTask(deepThinking, token))
                     return;
-                
+
                 if (targetLang.Name == "All")
                 {
                     foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
@@ -115,7 +116,7 @@ namespace LocalizationTranslationWPF.Translate
 
         private async Task<bool> LoginTask(bool deepThink, CancellationToken token)
         {
-            if(!ToUrl(url)) return false;
+            if (!ToUrl(url)) return false;
             LogUtils.Log("等待登录...");
 
             var textArea = await FindElementBy(By.XPath("//textarea[@id='chat-input']"), 100000, token);
@@ -126,31 +127,34 @@ namespace LocalizationTranslationWPF.Translate
             }
 
             if (!deepThink) return true;
-            
+
             await Task.Delay(500, token);
             var btnDeepThink = webDriver?.FindElement(By.XPath("//span[text()='深度思考 (R1)']"));
             btnDeepThink?.Click();
             return true;
         }
+
         private async Task<string> Translate(string text, Pair to, CancellationToken token)
         {
             if (!ToUrl(url)) return "";
-            
-            var contentText = string.Format(Prompt, text, to.Name);
+
+            var contentText = $"{prompt}{string.Format(DefaultPrompt, text, to.Name)}";
             var textArea = await FindElementBy(By.XPath("//textarea[@id='chat-input']"), 100000, token);
-            if(textArea == null) return "";
+            if (textArea == null) return "";
             textArea.SendKeys(contentText);
-            
-            var btnSend = await FindElementBy(By.XPath("//div[@role='button' and @aria-disabled='false']"), 100000, token);
+
+            var btnSend = await FindElementBy(By.XPath("//div[@role='button' and @aria-disabled='false']"), 100000,
+                token);
             if (btnSend == null) return "";
             btnSend.Click();
-            
+
             var block = await FindElementBy(By.XPath("//div[@class='ds-markdown ds-markdown--block']"), 100000, token);
             if (block == null) return "";
             while (block.Text[^1] != '}')
             {
                 await Task.Delay(100, token);
             }
+
             return block.Text;
         }
     }

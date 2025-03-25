@@ -88,27 +88,24 @@ namespace LocalizationTranslationWPF.Translate
                     return false;
                 }
 
-                if (sb.Length + newText.Length <= 5000)
-                {
-                    sb.Append(newText);
-                }
-                else
+                if (sb.Length + newText.Length > 5000)
                 {
                     if (!await Translate(sb.ToString(), from.isoCode, to.isoCode,
-                            (result) => { values.AddRange(result); }, token))
+                            result => { values.AddRange(result); }, token))
                     {
                         return false;
                     }
 
                     sb.Clear();
-                    sb.Append(newText);
                 }
+
+                sb.Append(newText);
             }
 
             if (sb.Length > 0)
             {
                 if (!await Translate(sb.ToString(), from.isoCode, to.isoCode,
-                        (result) => { values.AddRange(result); }, token))
+                        result => { values.AddRange(result); }, token))
                 {
                     return false;
                 }
@@ -147,13 +144,9 @@ namespace LocalizationTranslationWPF.Translate
             if(!ToUrl(url)) return false;
 
             var btn = await FindElementBy(By.CssSelector("button[aria-label='Copy translation']"), 100, token);
-            if (btn == null)
-            {
-                LogUtils.LogError("找不到按钮");
-                return false;
-            }
+            if (btn == null) return false;
+            btn.Click();
             
-            await Task.Delay(500, token);
 
             //访问Windows粘贴板
             var text = ThreadUtils.GetClipboard();

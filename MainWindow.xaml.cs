@@ -86,7 +86,7 @@ namespace LocalizationTranslationWPF
                         await DeepSeekWebDriverTranslator.Run(cts.Token, true);
                         break;
                     case TranslateMethod.AIApi:
-                        await AITranslator.Run(cts.Token);
+                        await AIApiTranslator.Run(cts.Token);
                         break;
                 }
             }
