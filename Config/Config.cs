@@ -25,7 +25,9 @@ namespace LocalizationTranslationWPF.Data
         public enum TranslateMethod
         {
             GoogleTranslate,
-            AI,
+            DeepSeek,
+            DeepSeekWithDeepThinking,
+            AIApi,
         }
     }
 }

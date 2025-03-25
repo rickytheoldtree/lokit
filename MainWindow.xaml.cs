@@ -54,7 +54,7 @@ namespace LocalizationTranslationWPF
         }
 
         private CancellationTokenSource? cts;
-        private CancelWindow? cancelWindow;
+        private PopWindow? popWindow;
         private async void BtnStartClick(object sender, RoutedEventArgs e)
         {
             try
@@ -62,19 +62,31 @@ namespace LocalizationTranslationWPF
                 cts = new CancellationTokenSource();
                 SetUILock(true);
 
-                cancelWindow = new CancelWindow(cts)
+                popWindow = new PopWindow("任务正在运行，请稍候...","取消任务", window =>
+                {
+                    cts?.Cancel();
+                    window.TextBlock.Text = "正在取消任务...";
+                    window.Btn.IsEnabled = false;
+                    window.Btn.Visibility = Visibility.Visible;
+                })
                 {
                     Owner = this
                 };
-                cancelWindow.Show();
+                popWindow.Show();
 
                 switch (ConfigUtils.TranslateMethod.Value)
                 {
                     case TranslateMethod.GoogleTranslate:
-                        await GoogleTranslateTask.Run(cts.Token);
+                        await GoogleWebDriverTranslator.Run(cts.Token);
                         break;
-                    case TranslateMethod.AI:
-                        await AITranslateTask.Run(cts.Token);
+                    case TranslateMethod.DeepSeek:
+                        await DeepSeekWebDriverTranslator.Run(cts.Token, false);
+                        break;
+                    case TranslateMethod.DeepSeekWithDeepThinking:
+                        await DeepSeekWebDriverTranslator.Run(cts.Token, true);
+                        break;
+                    case TranslateMethod.AIApi:
+                        await AITranslator.Run(cts.Token);
                         break;
                 }
             }
@@ -88,7 +100,7 @@ namespace LocalizationTranslationWPF
             }
             finally
             {
-                cancelWindow?.Close();
+                popWindow?.Close();
                 cts = null;
                 SetUILock(false);
                 Focus();
