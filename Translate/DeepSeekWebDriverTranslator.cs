@@ -15,6 +15,7 @@ namespace LocalizationTranslationWPF.Translate
         private const string DefaultPrompt =
             "接下来你将翻译我提供的json格式文件，你需要翻译成纯文本形式的json，一定一定不要markdown代码块，否则对我来说没有意义!" +
             "如果翻译内容里出现了占位符，请务必保留，请确保翻译后的文本中也有这些标记，且数量不变。" +
+            "请在最后用[end]结束你的翻译。" +
             "那么现在，请将 {0} 翻译成 {1}";
 
         private readonly string url = "https://chat.deepseek.com/";
@@ -182,12 +183,18 @@ namespace LocalizationTranslationWPF.Translate
 
             var block = await FindElementBy(By.XPath("//div[@class='ds-markdown ds-markdown--block']"), 100000, token);
             if (block == null) return "";
-            while (block.Text[^1] != '}')
+            while (!block.Text.Contains("[end]"))
             {
                 await Task.Delay(100, token);
             }
-
-            return block.Text;
+            var textBlock = block.Text;
+            var endIndex = textBlock.IndexOf("[end]", StringComparison.Ordinal);
+            if (endIndex != -1)
+            {
+                textBlock = textBlock[..endIndex];
+            }
+            textBlock = textBlock.Replace("[end]", "");
+            return textBlock;
         }
     }
 }
