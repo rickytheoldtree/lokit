@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
@@ -170,11 +171,15 @@ namespace LocalizationTranslationWPF.Translate
         private async Task<string> Translate(string text, Pair to, CancellationToken token)
         {
             if (!ToUrl(url)) return "";
-
             var contentText = $"{prompt}{string.Format(DefaultPrompt, text, to.Name)}";
             var textArea = await FindElementBy(By.XPath("//textarea[@id='chat-input']"), 100000, token);
             if (textArea == null) return "";
-            textArea.SendKeys(contentText);
+            textArea.Click();
+            var thread = new Thread(() => Clipboard.SetText(contentText));
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+            textArea.SendKeys(Keys.Control + "v");
 
             var btnSend = await FindElementBy(By.XPath("//div[@role='button' and @aria-disabled='false']"), 100000,
                 token);
