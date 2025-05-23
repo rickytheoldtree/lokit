@@ -315,5 +315,10 @@ namespace LocalizationTranslationWPF
 
             ConfigUtils.TargetLangAmount.Value = (TargetLangAmount)TargetLangAmountComboBox.SelectedIndex;
         }
+
+        private void ResetPromptClick(object sender, RoutedEventArgs e)
+        {
+            TextBoxPrompt.Text = ConfigUtils.DefaultAIPrompt;
+        }
     }
 }

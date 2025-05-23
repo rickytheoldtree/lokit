@@ -13,12 +13,6 @@ namespace LocalizationTranslationWPF.Translate
 {
     public class DeepSeekWebDriverTranslator : WebDriverTranslator
     {
-        private const string DefaultPrompt =
-            "接下来你将翻译我提供的json格式文件，你需要翻译成纯文本形式的json，一定一定不要markdown代码块，否则对我来说没有意义!" +
-            "如果翻译内容里出现了占位符，请务必保留，请确保翻译后的文本中也有这些标记，且数量不变。" +
-            "请在最后用[end]结束你的翻译。" +
-            "那么现在，请将 {0} 翻译成 {1}";
-
         private readonly string url = "https://chat.deepseek.com/";
         private readonly string prompt;
 
@@ -171,7 +165,7 @@ namespace LocalizationTranslationWPF.Translate
         private async Task<string> Translate(string text, Pair to, CancellationToken token)
         {
             if (!ToUrl(url)) return "";
-            var contentText = $"{prompt}{string.Format(DefaultPrompt, text, to.Name)}";
+            var contentText = $"{string.Format(prompt, to.Name, text)}";
             var textArea = await FindElementBy(By.XPath("//textarea[@id='chat-input']"), 100000, token);
             if (textArea == null) return "";
             textArea.Click();

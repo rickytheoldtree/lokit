@@ -1,5 +1,6 @@
 ﻿using System;
 using LocalizationTranslationWPF.DictConverter;
+using LocalizationTranslationWPF.Utils;
 
 namespace LocalizationTranslationWPF.Data
 {
@@ -10,11 +11,12 @@ namespace LocalizationTranslationWPF.Data
         public DictConverterType dictConverter;
         public int isoPairIndex;
         public TranslateMethod translateMethod;
-        public TargetLangAmount targetLangAmount; 
+        public TargetLangAmount targetLangAmount;
         public string aiAPIKey = "输入你的apikey";
         public string aiEndpoint = "https://api.deepseek.com/chat/completions";
         public string aiModel = "deepseek-chat";
-        public string aiPrompt = "你是休闲游戏的翻译官，你需要将游戏中的文本翻译成指定语言。";
+
+        public string aiPrompt = ConfigUtils.DefaultAIPrompt;
 
         public enum WebDriverType
         {
@@ -30,7 +32,7 @@ namespace LocalizationTranslationWPF.Data
             DeepSeekWithDeepThinking,
             AIApi,
         }
-        
+
         public enum TargetLangAmount
         {
             Single,

@@ -12,6 +12,11 @@ namespace LocalizationTranslationWPF.Utils
     {
         public static Config Config => config ??= Load();
         private static Config? config;
+        public const string DefaultAIPrompt = "你是休闲游戏的翻译官，你需要将游戏中的文本翻译成指定语言。" +
+                                              "接下来你将翻译我提供的json格式文件，你需要翻译成纯文本形式的json，一定一定不要markdown代码块，否则对我来说没有意义!" +
+                                              "如果翻译内容里出现了占位符，请务必保留，请确保翻译后的文本中也有这些标记，且数量不变。" +
+                                              "请在最后用[end]结束你的翻译。" +
+                                              "请将以下内容翻译为{0}对应的语言：{1}";
 
         static ConfigUtils()
         {

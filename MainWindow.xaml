@@ -193,8 +193,9 @@
                         <Label Content="Prompt(AIApi/DS)：" Grid.Row="6" Grid.Column="0" 
                                VerticalAlignment="Center" Margin="5"/>
                         <TextBox x:Name="TextBoxPrompt" Grid.Row="6" Grid.Column="1" Height="25" VerticalContentAlignment="Center"
-                                 Margin="5" TextWrapping="Wrap" TextChanged="TextBoxPromptTextChanged" 
-                                 Grid.ColumnSpan="2"/>
+                                 Margin="5" TextWrapping="Wrap" TextChanged="TextBoxPromptTextChanged" />
+                        <Button x:Name="BtnResetPrompt" Content="重置" Grid.Row="6" Grid.Column="2" 
+                                Width="120" Height="25" Margin="5" Click="ResetPromptClick"/>
                     </Grid>
                 </ScrollViewer>
             </TabItem>
