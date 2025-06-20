@@ -66,7 +66,7 @@ namespace LocalizationTranslationWPF.Utils
             }
 
             IOUtils.OutputJson($"{PathUtils.CombineOutputPath}\\{pair.Name}.json", sourceDict, dictConverter);
-            LogUtils.Log($"{pair.Name}合并完成，文件路径：{PathUtils.OutputPath}\\{pair.Name}.json");
+            LogUtils.Log($"{pair.Name}合并完成，文件路径：{PathUtils.CombineOutputPath}\\{pair.Name}.json");
             return true;
         }
     }
