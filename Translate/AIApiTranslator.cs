@@ -99,12 +99,6 @@ namespace LocalizationTranslationWPF.Translate
         private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
             CancellationToken token)
         {
-            if (from.isoCode == to.isoCode)
-            {
-                LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
-                return true;
-            }
-
             var originJsonPath = $"{PathUtils.InputPath}\\{from.Name}.json";
             if (!File.Exists(originJsonPath))
             {
@@ -116,6 +110,13 @@ namespace LocalizationTranslationWPF.Translate
             {
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
                 return false;
+            }
+            
+            if (from.isoCode == to.isoCode)
+            {
+                IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", originJson, converter);
+                LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
+                return true;
             }
 
             string result = await Translate(converter.Serialize(originJson), to, token);
