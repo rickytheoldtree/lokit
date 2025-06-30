@@ -174,6 +174,7 @@ namespace LocalizationTranslationWPF.Translate
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
             thread.Join();
+            await Task.Yield();
             textArea.SendKeys(Keys.Control + "v");
 
             var btnSend = await FindElementBy(By.XPath("//div[@role='button' and @aria-disabled='false']"), 100000,
