@@ -169,12 +169,13 @@ namespace LocalizationTranslationWPF.Translate
             var contentText = $"{string.Format(prompt, to.Name, text)}";
             var textArea = await FindElementBy(By.XPath("//textarea[@id='chat-input']"), 100000, token);
             if (textArea == null) return "";
-            textArea.Click();
             var thread = new Thread(() => Clipboard.SetText(contentText));
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
             thread.Join();
-            await Task.Yield();
+            await Task.Delay(500, token);
+            textArea.Click();
+            await Task.Delay(500, token);
             textArea.SendKeys(Keys.Control + "v");
 
             var btnSend = await FindElementBy(By.XPath("//div[@role='button' and @aria-disabled='false']"), 100000,
