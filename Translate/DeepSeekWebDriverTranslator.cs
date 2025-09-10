@@ -38,7 +38,7 @@ namespace LocalizationTranslationWPF.Translate
                 var random = new Random();
                 if (!await translator.LoginTask(deepThinking, token))
                     return;
-
+                LogUtils.Log("登录成功");
                 switch (ConfigUtils.TargetLangAmount.Value)
                 {
                     case Config.TargetLangAmount.All:
@@ -147,8 +147,7 @@ namespace LocalizationTranslationWPF.Translate
         {
             if (!ToUrl(url)) return false;
             LogUtils.Log("等待登录...");
-
-            var textArea = await FindElementBy(By.XPath("//textarea[@id='chat-input']"), 100000, token);
+            var textArea = await FindElementBy(By.TagName("textarea"), 100000, token);
             if (textArea == null)
             {
                 LogUtils.LogError("登录超时");
@@ -158,7 +157,7 @@ namespace LocalizationTranslationWPF.Translate
             if (!deepThink) return true;
 
             await Task.Delay(500, token);
-            var btnDeepThink = webDriver?.FindElement(By.XPath("//span[text()='深度思考 (R1)']"));
+            var btnDeepThink = webDriver?.FindElement(By.XPath("//button[.//span[contains(text(),'深度思考')]]"));
             btnDeepThink?.Click();
             return true;
         }
@@ -167,23 +166,21 @@ namespace LocalizationTranslationWPF.Translate
         {
             if (!ToUrl(url)) return "";
             var contentText = $"{string.Format(prompt, to.Name, text)}";
-            var textArea = await FindElementBy(By.XPath("//textarea[@id='chat-input']"), 100000, token);
+            var textArea = await FindElementBy(By.TagName("textarea"), 100000, token);
             if (textArea == null) return "";
+            textArea.Click();
+            await Task.Delay(500, token);
             var thread = new Thread(() => Clipboard.SetText(contentText));
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
             thread.Join();
-            await Task.Delay(500, token);
-            textArea.Click();
-            await Task.Delay(500, token);
+            await Task.Delay(1000, token);
             textArea.SendKeys(Keys.Control + "v");
+            await Task.Delay(500, token);
+            textArea.SendKeys(Keys.Enter);
 
-            var btnSend = await FindElementBy(By.XPath("//div[@role='button' and @aria-disabled='false']"), 100000,
-                token);
-            if (btnSend == null) return "";
-            btnSend.Click();
-
-            var block = await FindElementBy(By.XPath("//div[@class='ds-markdown ds-markdown--block']"), 100000, token);
+            var block = await FindElementBy(By.XPath("//p[@class='ds-markdown-paragraph']"), 100000, token);
+            LogUtils.Log("等待翻译完成...");
             if (block == null) return "";
             while (!block.Text.Contains("[end]"))
             {
