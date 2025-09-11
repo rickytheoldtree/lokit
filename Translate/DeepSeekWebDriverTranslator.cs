@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
@@ -77,8 +76,10 @@ namespace LocalizationTranslationWPF.Translate
                             {
                                 LogUtils.LogError($"翻译{targetLang.Name}失败");
                             }
+
                             await RandomDelay(random);
                         }
+
                         break;
                     }
                     case Config.TargetLangAmount.Single:
@@ -104,7 +105,7 @@ namespace LocalizationTranslationWPF.Translate
                 LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
                 return false;
             }
-            
+
             if (from.isoCode == to.isoCode)
             {
                 IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", originJson, converter);
@@ -170,12 +171,9 @@ namespace LocalizationTranslationWPF.Translate
             if (textArea == null) return "";
             textArea.Click();
             await Task.Delay(500, token);
-            var thread = new Thread(() => Clipboard.SetText(contentText));
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
-            await Task.Delay(1000, token);
-            textArea.SendKeys(Keys.Control + "v");
+            var js = (IJavaScriptExecutor)webDriver!;
+            js.ExecuteScript("arguments[0].value = arguments[1];", textArea, contentText);
+            textArea.SendKeys(" ");
             await Task.Delay(500, token);
             textArea.SendKeys(Keys.Enter);
 
@@ -186,12 +184,14 @@ namespace LocalizationTranslationWPF.Translate
             {
                 await Task.Delay(100, token);
             }
+
             var textBlock = block.Text;
             var endIndex = textBlock.IndexOf("[end]", StringComparison.Ordinal);
             if (endIndex != -1)
             {
                 textBlock = textBlock[..endIndex];
             }
+
             textBlock = textBlock.Replace("[end]", "");
             return textBlock;
         }
