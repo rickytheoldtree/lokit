@@ -7,6 +7,11 @@ namespace LocalizationTranslationWPF.Utils
     {
         public static void OutputJson(string path, Dictionary<string, string> dic, IDictConverter.IDictConverter converter)
         {
+            var folder = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
             File.WriteAllText(path, converter.Serialize(dic));
         }
 
@@ -21,8 +26,6 @@ namespace LocalizationTranslationWPF.Utils
                 dict = null;
                 return false;
             }
-
         }
-
     }
 }

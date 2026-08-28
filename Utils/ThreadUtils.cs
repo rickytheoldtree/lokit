@@ -6,13 +6,12 @@ namespace LocalizationTranslationWPF.Utils
     public static class ThreadUtils
     {
         /// <summary>
-        /// 复制文本到剪切板
+        /// 读取剪贴板文本；剪贴板必须在STA线程访问，被其它进程占用时返回空串
         /// </summary>
         public static string GetClipboard()
         {
-            //用STA方式启动线程 并获取剪切板数据
-            string result = "";
-            Thread thread = new Thread(() =>
+            var result = "";
+            var thread = new Thread(() =>
             {
                 try
                 {

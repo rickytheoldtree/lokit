@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using LocalizationTranslationWPF.Data;
@@ -14,29 +15,47 @@ public abstract class WebDriverTranslator : IDisposable
 {
     protected readonly IWebDriver? webDriver;
     private readonly DriverService? service;
+    private bool disposed;
 
-    protected WebDriverTranslator(Config.WebDriverType type)
+    /// <param name="driverPath">驱动的完整路径，由 <see cref="WebDriverProvider"/> 解析得到</param>
+    protected WebDriverTranslator(Config.WebDriverType type, string driverPath)
     {
+        var folder = Path.GetDirectoryName(driverPath);
+        var fileName = Path.GetFileName(driverPath);
+        if (string.IsNullOrEmpty(folder) || string.IsNullOrEmpty(fileName))
+        {
+            throw new ArgumentException($"驱动路径无效：{driverPath}", nameof(driverPath));
+        }
+
         try
         {
             switch (type)
             {
-                default:
-                case Config.WebDriverType.Edge:
-                    service = EdgeDriverService.CreateDefaultService(PathUtils.DriverPath);
-                    service.HideCommandPromptWindow = true;
-                    webDriver = new EdgeDriver(service as EdgeDriverService);
-                    break;
                 case Config.WebDriverType.Chrome:
-                    service = ChromeDriverService.CreateDefaultService(PathUtils.DriverPath);
-                    service.HideCommandPromptWindow = true;
-                    webDriver = new ChromeDriver(service as ChromeDriverService);
+                {
+                    var chrome = ChromeDriverService.CreateDefaultService(folder, fileName);
+                    chrome.HideCommandPromptWindow = true;
+                    service = chrome;
+                    webDriver = new ChromeDriver(chrome);
                     break;
+                }
                 case Config.WebDriverType.FireFox:
-                    service = FirefoxDriverService.CreateDefaultService(PathUtils.DriverPath);
-                    service.HideCommandPromptWindow = true;
-                    webDriver = new FirefoxDriver(service as FirefoxDriverService);
+                {
+                    var firefox = FirefoxDriverService.CreateDefaultService(folder, fileName);
+                    firefox.HideCommandPromptWindow = true;
+                    service = firefox;
+                    webDriver = new FirefoxDriver(firefox);
                     break;
+                }
+                case Config.WebDriverType.Edge:
+                default:
+                {
+                    var edge = EdgeDriverService.CreateDefaultService(folder, fileName);
+                    edge.HideCommandPromptWindow = true;
+                    service = edge;
+                    webDriver = new EdgeDriver(edge);
+                    break;
+                }
             }
         }
         catch
@@ -47,16 +66,21 @@ public abstract class WebDriverTranslator : IDisposable
         }
     }
 
+    /// <summary>
+    /// 轮询查找元素，每次间隔100ms，找不到返回null
+    /// </summary>
     protected async Task<IWebElement?> FindElementBy(By by, int tryCount, CancellationToken token)
     {
-        var count = 0;
-        IWebElement? element = null;
-
-        while (element == null && count < tryCount)
+        for (var count = 0; count < tryCount; count++)
         {
+            token.ThrowIfCancellationRequested();
             try
             {
-                element = webDriver?.FindElement(by);
+                var element = webDriver?.FindElement(by);
+                if (element != null)
+                {
+                    return element;
+                }
             }
             catch (NoSuchWindowException e)
             {
@@ -68,17 +92,12 @@ public abstract class WebDriverTranslator : IDisposable
                 // ignore
             }
 
-            count++;
-            if (element != null)
-            {
-                return element;
-            }
-
             await Task.Delay(100, token);
         }
+
         return null;
     }
-    
+
     protected bool ToUrl(string url)
     {
         try
@@ -93,14 +112,20 @@ public abstract class WebDriverTranslator : IDisposable
         }
     }
 
-    protected static Task RandomDelay(Random random)
+    /// <summary>
+    /// 批量翻译时的随机间隔，降低被判定为机器人的概率
+    /// </summary>
+    protected static Task RandomDelay(Random random, CancellationToken token)
     {
         var randomDelay = random.Next(3000, 8000);
         LogUtils.Log($"随机延迟: {randomDelay}ms");
-        return Task.Delay(randomDelay);
+        return Task.Delay(randomDelay, token);
     }
+
     public void Dispose()
     {
+        if (disposed) return;
+        disposed = true;
         webDriver?.Quit();
         service?.Dispose();
     }

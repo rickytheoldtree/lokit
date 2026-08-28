@@ -19,12 +19,11 @@
             <TabItem Header="翻译">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>  <!-- 开始按钮行 -->
-                        <RowDefinition Height="Auto"/>  <!-- 翻译源语言行 -->
-                        <RowDefinition Height="Auto"/>  <!-- 目标语言行 -->
-                        <RowDefinition Height="Auto"/>  <!-- 翻译方式行 -->
-                        <RowDefinition Height="Auto"/>  <!-- 文件夹选择行 -->
-                        <RowDefinition Height="Auto"/>  <!-- 其他操作行 -->
+                        <RowDefinition Height="Auto"/>  <!-- 翻译源语言 / 开始按钮 -->
+                        <RowDefinition Height="Auto"/>  <!-- 目标语言 / 目标语言数量 -->
+                        <RowDefinition Height="Auto"/>  <!-- 翻译方式 -->
+                        <RowDefinition Height="Auto"/>  <!-- 文件夹入口 -->
+                        <RowDefinition Height="Auto"/>  <!-- 其他操作 -->
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -55,7 +54,7 @@
                     <ComboBox x:Name="TranslateMethodComboBox" Grid.Column="1" Grid.Row="2" 
                               Height="25" Margin="5" SelectionChanged="TranslateMethodComboBoxSelectionChanged"/>
                     
-                    <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4" 
+                    <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="3" 
                                 Margin="5" HorizontalAlignment="Left">
                         <Button x:Name="BtnOpenInput" Content="语言源文件夹" Width="120" Height="25" 
                                 Margin="0,0,5,0" Click="BtnOpenInputClick"/>
@@ -67,7 +66,7 @@
                                 Click="BtnOpenCombineOutputFolderClick"/>
                     </StackPanel>
                     
-                    <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="5" 
+                    <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="4" 
                                 Margin="5" HorizontalAlignment="Left">
                         <Button x:Name="BtnSimplified2Traditional" Content="简→繁" Width="100" Height="25" 
                                 Margin="0,0,5,0" Click="BtnSimplified2TraditionalClick"/>
@@ -135,6 +134,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -142,13 +142,12 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
-                        <!-- 浏览器工具 -->
-                        <Label Content="浏览器工具：" Grid.Row="0" Grid.Column="0" 
+                        <!-- 浏览器（驱动由程序自动下载，使用者无需关心） -->
+                        <Label Content="浏览器：" Grid.Row="0" Grid.Column="0" 
                                VerticalAlignment="Center" Margin="5"/>
                         <ComboBox x:Name="WebDriveComboBox" Grid.Row="0" Grid.Column="1" Height="25" 
-                                  Margin="5" SelectionChanged="WebDriveComboBoxSelectionChanged"/>
-                        <Button x:Name="BtnOpenDriversFolder" Content="驱动文件夹" Grid.Row="0" Grid.Column="2" 
-                                Width="120" Height="25" Margin="5" Click="BtnOpenDriversFolderClick"/>
+                                  Margin="5" SelectionChanged="WebDriveComboBoxSelectionChanged"
+                                  Grid.ColumnSpan="2"/>
                         
                         <!-- Json格式 -->
                         <Label Content="Json格式：" Grid.Row="1" Grid.Column="0" 
@@ -196,6 +195,14 @@
                                  Margin="5" TextWrapping="Wrap" TextChanged="TextBoxPromptTextChanged" />
                         <Button x:Name="BtnResetPrompt" Content="重置" Grid.Row="6" Grid.Column="2" 
                                 Width="120" Height="25" Margin="5" Click="ResetPromptClick"/>
+                        
+                        <!-- 驱动代理：仅在自动下载驱动失败时才需要 -->
+                        <Label Content="驱动代理(可选)：" Grid.Row="7" Grid.Column="0" 
+                               VerticalAlignment="Center" Margin="5"/>
+                        <TextBox x:Name="TextBoxDriverProxy" Grid.Row="7" Grid.Column="1" Height="25" VerticalContentAlignment="Center"
+                                 Margin="5" TextWrapping="Wrap" TextChanged="TextBoxDriverProxyTextChanged" 
+                                 Grid.ColumnSpan="2"
+                                 ToolTip="留空表示直连。仅在自动下载浏览器驱动失败时填写，例如 http://127.0.0.1:7890"/>
                     </Grid>
                 </ScrollViewer>
             </TabItem>

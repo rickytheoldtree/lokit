@@ -3,7 +3,6 @@ using LocalizationTranslationWPF.Utils;
 using OpenQA.Selenium;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -14,7 +13,14 @@ namespace LocalizationTranslationWPF.Translate
 {
     public class GoogleWebDriverTranslator : WebDriverTranslator
     {
-        private GoogleWebDriverTranslator(Config.WebDriverType type) : base(type)
+        /// <summary>
+        /// 谷歌翻译单次请求的文本长度上限
+        /// </summary>
+        private const int MaxRequestLength = 5000;
+
+        private const string Separator = "-----------------------";
+
+        private GoogleWebDriverTranslator(Config.WebDriverType type, string driverPath) : base(type, driverPath)
         {
         }
 
@@ -28,94 +34,40 @@ namespace LocalizationTranslationWPF.Translate
                     throw new Exception("字典转换器类型错误");
                 }
 
-                var sourceLang = ConfigUtils.SourceLang;
-                var targetLang = ConfigUtils.TargetLang;
-                using var translator = new GoogleWebDriverTranslator(ConfigUtils.WebDriver.Value);
-                switch (ConfigUtils.TargetLangAmount.Value)
-                {
-                    case Config.TargetLangAmount.All:
-                    {
-                        foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
-                        {
-                            token.ThrowIfCancellationRequested();
-                            targetLang = pair;
-                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
-                                    token))
-                            {
-                                LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            }
-                        }
-
-                        break;
-                    }
-                    case Config.TargetLangAmount.Remain:
-                    {
-                        var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
-                        var index = pairs.FindIndex(p => p.isoCode == targetLang.isoCode);
-                        if (index == -1)
-                        {
-                            LogUtils.LogError("目标语言不在剩余语言列表中");
-                            return;
-                        }
-
-                        for (var i = index; i < pairs.Count; i++)
-                        {
-                            token.ThrowIfCancellationRequested();
-                            targetLang = pairs[i];
-                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
-                                    token))
-                            {
-                                LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            }
-                        }
-                        break;
-                    }
-                    case Config.TargetLangAmount.Single:
-                    default:
-                        await translator.TranslateAsync(sourceLang, targetLang, dictConverter, token);
-                        break;
-                }
+                var driver = await WebDriverProvider.PrepareAsync(ConfigUtils.WebDriver.Value, token);
+                using var translator = new GoogleWebDriverTranslator(driver.Type, driver.DriverPath);
+                await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token);
             }, token);
         }
 
-        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter, CancellationToken token)
+        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
+            CancellationToken token)
         {
-            var originJsonPath = $"{PathUtils.InputPath}\\{from.Name}.json";
-            if (!File.Exists(originJsonPath))
+            if (!TranslationJob.TryLoadSource(from, converter, out var originJson) || originJson == null)
             {
-                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json不存在");
                 return false;
             }
 
-            var sb = new StringBuilder();
-            if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
+            if (TranslationJob.CopyWhenSameLanguage(from, to, originJson, converter))
             {
-                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
-
-                return false;
-            }
-            
-            if (from.isoCode == to.isoCode)
-            {
-                IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", originJson, converter);
-                LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
                 return true;
             }
 
             var values = new List<string>();
+            var sb = new StringBuilder();
             foreach (var d in originJson)
             {
-                var newText = $"-----------------------%0A{GetUrlSafeString(d.Value.Trim())}%0A";
-                if (newText.Length > 5000)
+                var newText = $"{Separator}%0A{GetUrlSafeString(d.Value.Trim())}%0A";
+                if (newText.Length > MaxRequestLength)
                 {
-                    LogUtils.LogError($"单个文本长度超过5000，无法翻译：{d.Key}；请自行切分后重新尝试");
+                    LogUtils.LogError($"单个文本长度超过{MaxRequestLength}，无法翻译：{d.Key}；请自行切分后重新尝试");
                     return false;
                 }
 
-                if (sb.Length + newText.Length > 5000)
+                //超长时先把已攒下的一批发出去
+                if (sb.Length + newText.Length > MaxRequestLength)
                 {
-                    if (!await Translate(sb.ToString(), from.isoCode, to.isoCode,
-                            result => { values.AddRange(result); }, token))
+                    if (!await Translate(sb.ToString(), from.isoCode, to.isoCode, values, token))
                     {
                         return false;
                     }
@@ -128,14 +80,12 @@ namespace LocalizationTranslationWPF.Translate
 
             if (sb.Length > 0)
             {
-                if (!await Translate(sb.ToString(), from.isoCode, to.isoCode,
-                        result => { values.AddRange(result); }, token))
+                if (!await Translate(sb.ToString(), from.isoCode, to.isoCode, values, token))
                 {
                     return false;
                 }
             }
 
-            var dic = new Dictionary<string, string>();
             var keys = originJson.Keys.ToList();
             if (keys.Count != values.Count)
             {
@@ -143,34 +93,29 @@ namespace LocalizationTranslationWPF.Translate
                 return false;
             }
 
+            var dic = new Dictionary<string, string>();
             for (var i = 0; i < keys.Count; i++)
             {
                 dic.Add(keys[i], values[i]);
             }
 
-            if (!Directory.Exists(PathUtils.OutputPath))
-            {
-                Directory.CreateDirectory(PathUtils.OutputPath);
-            }
-
-            IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
-            LogUtils.Log($"{to.Name}翻译完成，文件路径：{PathUtils.OutputPath}\\{to.Name}.json");
+            TranslationJob.WriteOutput(to, dic, converter);
             return true;
         }
-        private async Task<bool> Translate(string txt, string from, string to, Action<List<string>> callback,
+
+        private async Task<bool> Translate(string txt, string from, string to, List<string> results,
             CancellationToken token)
         {
             var url = $"https://translate.google.com/?hl=en&sl={from}" +
-                  $"&tl={to}" +
-                  $"&text={txt}" +
-                  "&op=translate";
-            
-            if(!ToUrl(url)) return false;
+                      $"&tl={to}" +
+                      $"&text={txt}" +
+                      "&op=translate";
+
+            if (!ToUrl(url)) return false;
 
             var btn = await FindElementBy(By.CssSelector("button[aria-label='Copy translation']"), 100, token);
             if (btn == null) return false;
             btn.Click();
-            
 
             //访问Windows粘贴板
             var text = ThreadUtils.GetClipboard();
@@ -179,7 +124,7 @@ namespace LocalizationTranslationWPF.Translate
                 return false;
             }
 
-            callback.Invoke(values);
+            results.AddRange(values);
             return true;
         }
 

@@ -1,116 +1,147 @@
-﻿using LocalizationTranslationWPF.DictConverter;
+﻿using LocalizationTranslationWPF.Data;
+using LocalizationTranslationWPF.DictConverter;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Windows;
 using System.Windows.Controls;
 
 namespace LocalizationTranslationWPF.Utils
 {
     public static class AddNewUtils
     {
+        private const string KeyColumn = "Key";
+        private const string ValueColumn = "Value";
+
+        private static readonly DataTable DataTable = new();
+
         static AddNewUtils()
         {
-            dataTable.Columns.Add(new DataColumn()
+            DataTable.Columns.Add(new DataColumn
             {
-                ColumnName = "Key",
+                ColumnName = KeyColumn,
                 DataType = typeof(string),
             });
-            dataTable.Columns.Add(new DataColumn()
+            DataTable.Columns.Add(new DataColumn
             {
-                ColumnName = "Value",
+                ColumnName = ValueColumn,
                 DataType = typeof(string),
             });
         }
-        private static DataTable dataTable = new();
+
         public static void Init(DataGrid dataGridAddNew)
         {
-            dataGridAddNew.ItemsSource = dataTable.DefaultView;
+            dataGridAddNew.ItemsSource = DataTable.DefaultView;
         }
 
         public static void Save()
         {
-            var dict = new Dictionary<string, string>();
-            for (int i = 0; i < dataTable.Rows.Count; i++)
+            if (!TryGetSourcePair(out var pair))
             {
-                var row = dataTable.Rows[i];
-                var key = row["Key"].ToString();
-                var value = row["Value"].ToString();
+                return;
+            }
+
+            var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
+            if (dictConverter == null)
+            {
+                LogUtils.LogError("无法找到转换器");
+                return;
+            }
+
+            var dict = new Dictionary<string, string>();
+            for (var i = 0; i < DataTable.Rows.Count; i++)
+            {
+                var row = DataTable.Rows[i];
+                var key = row[KeyColumn].ToString();
                 if (string.IsNullOrEmpty(key))
                 {
                     continue;
                 }
+
                 if (dict.ContainsKey(key))
                 {
                     LogUtils.LogError($"第{i + 1}行的key: {key} 重复了");
                     return;
                 }
-                dict[key] = value ?? "";
+                dict[key] = row[ValueColumn].ToString() ?? "";
             }
-            var pair = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value)[0];
 
-            var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
-            if (dictConverter == null)
-            {
-                LogUtils.LogError("无法找到转换器");
-                return;
-            }
-            IOUtils.OutputJson($"{PathUtils.NewPath}\\{pair.Name}.json", dict, dictConverter);
+            var path = PathUtils.NewFile(pair.Name);
+            IOUtils.OutputJson(path, dict, dictConverter);
+            LogUtils.Log($"保存完成，文件路径：{path}");
         }
 
         internal static void Load()
         {
+            if (!TryGetSourcePair(out var pair))
+            {
+                return;
+            }
+
             var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
             if (dictConverter == null)
             {
                 LogUtils.LogError("无法找到转换器");
                 return;
             }
-            var pair = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value)[0];
-            dataTable.Clear();
-            if (IOUtils.TryInputJson($"{PathUtils.NewPath}\\{pair.Name}.json", dictConverter, out var dict))
+
+            var path = PathUtils.NewFile(pair.Name);
+            DataTable.Clear();
+            if (!IOUtils.TryInputJson(path, dictConverter, out var dict) || dict == null)
             {
-                if(dict == null)
-                {
-                    return;
-                }
-                foreach (var item in dict)
-                {
-                    var row = dataTable.NewRow();
-                    row["Key"] = item.Key;
-                    row["Value"] = item.Value;
-                    dataTable.Rows.Add(row);
-                }
+                LogUtils.LogError($"读取{path}失败");
+                return;
+            }
+
+            foreach (var item in dict)
+            {
+                var row = DataTable.NewRow();
+                row[KeyColumn] = item.Key;
+                row[ValueColumn] = item.Value;
+                DataTable.Rows.Add(row);
             }
         }
 
-        internal static void PasteClipboardData(DataGrid dataGridAddNew)
+        /// <summary>
+        /// 把剪贴板里的制表符分隔文本按行追加到表格
+        /// </summary>
+        internal static void PasteClipboardData()
         {
-            // 从剪贴板中获取文本数据
-            string clipboardText = Clipboard.GetText();
-            if (!string.IsNullOrEmpty(clipboardText))
+            var clipboardText = ThreadUtils.GetClipboard();
+            if (string.IsNullOrEmpty(clipboardText))
             {
-                // 将剪贴板内容按行分割（适应 Windows 与 Unix 行结束符）
-                string[] rows = clipboardText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (string row in rows)
-                {
-                    // 将每行文本按制表符分割，假设数据为制表符分隔格式
-                    string[] cells = row.Split('\t');
-
-                    // 创建 DataTable 的新行，假设 myDataTable 为你绑定到 DataGrid 的 DataTable 对象
-                    DataRow newRow = dataTable.NewRow();
-
-                    // 遍历每个单元格数据并赋值到新行中
-                    for (int i = 0; i < cells.Length && i < dataTable.Columns.Count; i++)
-                    {
-                        newRow[i] = cells[i];
-                    }
-
-                    // 将新行添加到 DataTable 中
-                    dataTable.Rows.Add(newRow);
-                }
+                return;
             }
+
+            //适应 Windows 与 Unix 行结束符
+            var rows = clipboardText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var row in rows)
+            {
+                //每行按制表符分割
+                var cells = row.Split('\t');
+                var newRow = DataTable.NewRow();
+                for (var i = 0; i < cells.Length && i < DataTable.Columns.Count; i++)
+                {
+                    newRow[i] = cells[i];
+                }
+                DataTable.Rows.Add(newRow);
+            }
+        }
+
+        /// <summary>
+        /// 新增页固定使用当前ISO表里的第一种语言
+        /// </summary>
+        private static bool TryGetSourcePair(out Pair pair)
+        {
+            var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+            if (pairs.Count == 0)
+            {
+                pair = default;
+                LogUtils.LogError("未找到任何语言对");
+                return false;
+            }
+
+            pair = pairs[0];
+            return true;
         }
     }
 }

@@ -5,18 +5,18 @@ namespace LocalizationTranslationWPF;
 
 public partial class PopWindow : Window
 {
-    private event Action<PopWindow> CancelRequested;
-    
-    public PopWindow(string title, string btnText, Action<PopWindow> onClick)
+    private readonly Action<PopWindow> onCancel;
+
+    public PopWindow(string title, string btnText, Action<PopWindow> onCancel)
     {
         InitializeComponent();
-        CancelRequested = onClick;
+        this.onCancel = onCancel;
         TextBlock.Text = title;
         Btn.Content = btnText;
     }
 
     private void BtnCancelClick(object sender, RoutedEventArgs e)
     {
-        CancelRequested.Invoke(this);
+        onCancel.Invoke(this);
     }
 }

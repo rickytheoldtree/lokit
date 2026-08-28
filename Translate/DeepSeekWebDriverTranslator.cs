@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using LocalizationTranslationWPF.Data;
@@ -12,10 +10,22 @@ namespace LocalizationTranslationWPF.Translate
 {
     public class DeepSeekWebDriverTranslator : WebDriverTranslator
     {
-        private readonly string url = "https://chat.deepseek.com/";
+        private const string Url = "https://chat.deepseek.com/";
+
+        /// <summary>
+        /// 结束标记，模型输出到这里说明本次翻译已完整
+        /// </summary>
+        private const string EndMark = "[end]";
+
+        /// <summary>
+        /// 等待页面元素的重试次数（每次间隔100ms），登录需要人工操作所以给得很长
+        /// </summary>
+        private const int WaitElementTryCount = 100000;
+
         private readonly string prompt;
 
-        private DeepSeekWebDriverTranslator(Config.WebDriverType type, string prompt) : base(type)
+        private DeepSeekWebDriverTranslator(Config.WebDriverType type, string driverPath, string prompt)
+            : base(type, driverPath)
         {
             this.prompt = prompt;
         }
@@ -30,125 +40,32 @@ namespace LocalizationTranslationWPF.Translate
                     throw new Exception("字典转换器类型错误");
                 }
 
-                var sourceLang = ConfigUtils.SourceLang;
-                var targetLang = ConfigUtils.TargetLang;
+                var driver = await WebDriverProvider.PrepareAsync(ConfigUtils.WebDriver.Value, token);
                 using var translator =
-                    new DeepSeekWebDriverTranslator(ConfigUtils.WebDriver.Value, ConfigUtils.Config.aiPrompt);
-                var random = new Random();
+                    new DeepSeekWebDriverTranslator(driver.Type, driver.DriverPath, ConfigUtils.AIPrompt.Value);
                 if (!await translator.LoginTask(deepThinking, token))
-                    return;
-                LogUtils.Log("登录成功");
-                switch (ConfigUtils.TargetLangAmount.Value)
                 {
-                    case Config.TargetLangAmount.All:
-                    {
-                        foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
-                        {
-                            token.ThrowIfCancellationRequested();
-                            targetLang = pair;
-                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
-                                    token))
-                            {
-                                LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            }
-
-                            await RandomDelay(random);
-                        }
-
-                        break;
-                    }
-                    case Config.TargetLangAmount.Remain:
-                    {
-                        var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
-                        var index = pairs.FindIndex(p => p.isoCode == targetLang.isoCode);
-                        if (index == -1)
-                        {
-                            LogUtils.LogError("目标语言不在剩余语言列表中");
-                            return;
-                        }
-
-                        for (var i = index; i < pairs.Count; i++)
-                        {
-                            token.ThrowIfCancellationRequested();
-                            targetLang = pairs[i];
-                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
-                                    token))
-                            {
-                                LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            }
-
-                            await RandomDelay(random);
-                        }
-
-                        break;
-                    }
-                    case Config.TargetLangAmount.Single:
-                    default:
-                        await translator.TranslateAsync(sourceLang, targetLang, dictConverter, token);
-                        break;
+                    return;
                 }
+                LogUtils.Log("登录成功");
+
+                var random = new Random();
+                await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync,
+                    () => RandomDelay(random, token), token);
             }, token);
         }
 
-        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
+        private Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
             CancellationToken token)
         {
-            var originJsonPath = $"{PathUtils.InputPath}\\{from.Name}.json";
-            if (!File.Exists(originJsonPath))
-            {
-                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json不存在");
-                return false;
-            }
-
-            if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
-            {
-                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
-                return false;
-            }
-
-            if (from.isoCode == to.isoCode)
-            {
-                IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", originJson, converter);
-                LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
-                return true;
-            }
-
-            string result = await Translate(converter.Serialize(originJson), to, token);
-            if (token.IsCancellationRequested)
-            {
-                return false;
-            }
-
-            Dictionary<string, string>? dic;
-            try
-            {
-                if (!converter.TryDeserialize(result, out dic) || dic == null)
-                {
-                    LogUtils.LogError($"{from.Name}翻译失败，ai翻译结果格式错误");
-                    return false;
-                }
-            }
-            catch
-            {
-                LogUtils.LogError($"{from.Name}翻译失败，ai翻译结果格式错误");
-                return false;
-            }
-
-            if (!Directory.Exists(PathUtils.OutputPath))
-            {
-                Directory.CreateDirectory(PathUtils.OutputPath);
-            }
-
-            IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
-            LogUtils.Log($"{to.Name}翻译完成，文件路径：{PathUtils.OutputPath}\\{to.Name}.json");
-            return true;
+            return TranslationJob.TranslateWithAiAsync(from, to, converter, Translate, token);
         }
 
         private async Task<bool> LoginTask(bool deepThink, CancellationToken token)
         {
-            if (!ToUrl(url)) return false;
+            if (!ToUrl(Url)) return false;
             LogUtils.Log("等待登录...");
-            var textArea = await FindElementBy(By.TagName("textarea"), 100000, token);
+            var textArea = await FindElementBy(By.TagName("textarea"), WaitElementTryCount, token);
             if (textArea == null)
             {
                 LogUtils.LogError("登录超时");
@@ -158,42 +75,45 @@ namespace LocalizationTranslationWPF.Translate
             if (!deepThink) return true;
 
             await Task.Delay(500, token);
-            var btnDeepThink = webDriver?.FindElement(By.XPath("//button[.//span[contains(text(),'深度思考')]]"));
-            btnDeepThink?.Click();
+            var btnDeepThink = await FindElementBy(By.XPath("//button[.//span[contains(text(),'深度思考')]]"), 50, token);
+            if (btnDeepThink == null)
+            {
+                LogUtils.LogError("未找到深度思考按钮，将以普通模式继续");
+                return true;
+            }
+            btnDeepThink.Click();
             return true;
         }
 
         private async Task<string> Translate(string text, Pair to, CancellationToken token)
         {
-            if (!ToUrl(url)) return "";
-            var contentText = $"{string.Format(prompt, to.Name, text)}";
-            var textArea = await FindElementBy(By.TagName("textarea"), 100000, token);
+            if (!ToUrl(Url)) return "";
+
+            var contentText = TranslationJob.FormatPrompt(prompt, to, text);
+            var textArea = await FindElementBy(By.TagName("textarea"), WaitElementTryCount, token);
             if (textArea == null) return "";
+
             textArea.Click();
             await Task.Delay(500, token);
+            //输入框是受控组件，直接赋值后再补一个按键触发它的 change 事件
             var js = (IJavaScriptExecutor)webDriver!;
             js.ExecuteScript("arguments[0].value = arguments[1];", textArea, contentText);
             textArea.SendKeys(" ");
             await Task.Delay(500, token);
             textArea.SendKeys(Keys.Enter);
 
-            var block = await FindElementBy(By.XPath("//p[@class='ds-markdown-paragraph']"), 100000, token);
+            var block = await FindElementBy(By.XPath("//p[@class='ds-markdown-paragraph']"), WaitElementTryCount, token);
             LogUtils.Log("等待翻译完成...");
             if (block == null) return "";
-            while (!block.Text.Contains("[end]"))
+
+            while (!block.Text.Contains(EndMark))
             {
                 await Task.Delay(100, token);
             }
 
             var textBlock = block.Text;
-            var endIndex = textBlock.IndexOf("[end]", StringComparison.Ordinal);
-            if (endIndex != -1)
-            {
-                textBlock = textBlock[..endIndex];
-            }
-
-            textBlock = textBlock.Replace("[end]", "");
-            return textBlock;
+            var endIndex = textBlock.IndexOf(EndMark, StringComparison.Ordinal);
+            return endIndex == -1 ? textBlock : textBlock[..endIndex];
         }
     }
 }

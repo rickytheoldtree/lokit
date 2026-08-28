@@ -9,20 +9,23 @@ namespace LocalizationTranslationWPF.Utils
 {
     public static class EditorUtils
     {
+        private const string KeyColumn = "Key";
+
         private static DataGrid? dataGrid;
-        private static Dictionary<string, string>? dataBase;
         private static List<Pair>? pairs;
-        // 新增一个当前编辑的 Pair 记录
+
+        /// <summary>
+        /// 当前正在编辑的语言
+        /// </summary>
         private static Pair CurrentPair { get; set; }
 
-        public static void Init(DataGrid dataGrid, ComboBox comboBoxEditorTargetLanguage)
+        public static void Init(DataGrid dataGridEditor, ComboBox comboBoxEditorTargetLanguage)
         {
-            var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
-            EditorUtils.dataGrid = dataGrid;
-            EditorUtils.pairs = pairs;
+            dataGrid = dataGridEditor;
+            pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+
             comboBoxEditorTargetLanguage.ItemsSource = pairs;
-            comboBoxEditorTargetLanguage.SelectedIndex = 0;
-            dataBase?.Clear();
+            comboBoxEditorTargetLanguage.SelectedIndex = pairs.Count > 0 ? 0 : -1;
         }
 
         public static void UpdateGrid(Pair pair)
@@ -33,54 +36,50 @@ namespace LocalizationTranslationWPF.Utils
                 LogUtils.LogError("未初始化");
                 return;
             }
+
             var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
             if (dictConverter == null)
             {
                 LogUtils.LogError("无法找到转换器");
                 return;
             }
-            var originJsonPath = $"{PathUtils.EditPath}\\{pair.Name}.json";
+
+            var originJsonPath = PathUtils.EditFile(pair.Name);
             if (!File.Exists(originJsonPath))
             {
-                LogUtils.LogError($"{PathUtils.EditPath}\\{pair.Name}.json不存在");
+                LogUtils.LogError($"{originJsonPath}不存在");
                 return;
             }
-            if (!IOUtils.TryInputJson(originJsonPath, dictConverter, out dataBase) || dataBase == null)
+
+            if (!IOUtils.TryInputJson(originJsonPath, dictConverter, out var dataBase) || dataBase == null)
             {
                 LogUtils.LogError($"读取{originJsonPath}失败");
                 return;
             }
 
-            // Create a new DataTable
             var dataTable = new DataTable();
-
-            // Add a column for the translation key.
-            dataTable.Columns.Add(new DataColumn()
+            //第一列是翻译key，不允许编辑
+            dataTable.Columns.Add(new DataColumn
             {
-                ColumnName = "Key",
+                ColumnName = KeyColumn,
                 ReadOnly = true,
                 DataType = typeof(string),
             });
-            dataTable.Columns.Add(new DataColumn()
+            dataTable.Columns.Add(new DataColumn
             {
                 ColumnName = pair.Name,
                 DataType = typeof(string),
             });
 
-            // Populate the DataTable rows using dataBase
             foreach (var entry in dataBase)
             {
-                // entry.Key is the translation key
                 var row = dataTable.NewRow();
-                row["Key"] = entry.Key;
+                row[KeyColumn] = entry.Key;
                 row[pair.Name] = entry.Value;
                 dataTable.Rows.Add(row);
             }
 
-            // Finally, bind the DataTable to the DataGrid
             dataGrid.ItemsSource = dataTable.DefaultView;
-            //设置第一列不可编辑
-
         }
 
         /// <summary>
@@ -116,16 +115,17 @@ namespace LocalizationTranslationWPF.Utils
             var newDataBase = new Dictionary<string, string>();
             foreach (DataRowView rowView in dataView)
             {
-                string? key = rowView["Key"]?.ToString();
-                string? value = rowView[CurrentPair.Name]?.ToString();
+                var key = rowView[KeyColumn]?.ToString();
+                var value = rowView[CurrentPair.Name]?.ToString();
                 if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(value))
                 {
                     newDataBase[key] = value;
                 }
             }
 
-            var originJsonPath = $"{PathUtils.EditPath}\\{CurrentPair.Name}.json";
+            var originJsonPath = PathUtils.EditFile(CurrentPair.Name);
             IOUtils.OutputJson(originJsonPath, newDataBase, dictConverter);
+            LogUtils.Log($"{CurrentPair.Name}保存完成，文件路径：{originJsonPath}");
         }
 
         /// <summary>
@@ -145,14 +145,15 @@ namespace LocalizationTranslationWPF.Utils
                 return;
             }
 
-            List<string> keys = new();
+            var keys = new List<string>();
             foreach (var item in dataGrid.SelectedItems)
             {
                 if (item is not DataRowView rowView)
                 {
                     continue;
                 }
-                string? key = rowView["Key"].ToString();
+
+                var key = rowView[KeyColumn]?.ToString();
                 if (string.IsNullOrEmpty(key))
                 {
                     LogUtils.LogError("无效的 Key");
@@ -170,7 +171,7 @@ namespace LocalizationTranslationWPF.Utils
 
             foreach (var pair in pairs)
             {
-                string filePath = $"{PathUtils.EditPath}\\{pair.Name}.json";
+                var filePath = PathUtils.EditFile(pair.Name);
                 if (!File.Exists(filePath))
                 {
                     LogUtils.LogError($"{filePath}不存在");
@@ -185,15 +186,15 @@ namespace LocalizationTranslationWPF.Utils
 
                 foreach (var key in keys)
                 {
-                    if (dict.ContainsKey(key))
-                    {
-                        dict.Remove(key);
-                    }
+                    dict.Remove(key);
                 }
                 IOUtils.OutputJson(filePath, dict, dictConverter);
             }
 
-            UpdateGrid(CurrentPair);
+            if (!string.IsNullOrEmpty(CurrentPair.Name))
+            {
+                UpdateGrid(CurrentPair);
+            }
         }
     }
 }

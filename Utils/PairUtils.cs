@@ -1,6 +1,8 @@
 ﻿using LocalizationTranslationWPF.Data;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace LocalizationTranslationWPF.Utils
 {
@@ -11,46 +13,59 @@ namespace LocalizationTranslationWPF.Utils
             new Pair("English", "en"),
             new Pair("ChineseSimplified", "zh-CN")
         };
-        private static readonly Pair AllPair = new("All", "All");
+
         public static Dictionary<string, List<Pair>> PairsCache { get; } = LoadAll();
+
+        /// <summary>
+        /// 取第 index 份“文件名-ISO”对应表，越界时回退到内置表
+        /// </summary>
         public static List<Pair> GetPairs(int index)
         {
-            int count = 0;
-            foreach (var item in PairsCache)
+            if (index < 0 || index >= PairsCache.Count)
             {
-                if (count == index)
-                {
-                    return item.Value;
-                }
-                count++;
+                return FallBackList;
             }
-            return FallBackList;
+            return PairsCache.Values.ElementAt(index);
         }
+
         private static Dictionary<string, List<Pair>> LoadAll()
         {
             var dict = new Dictionary<string, List<Pair>>();
             var path = PathUtils.IsoPath;
-            //遍历path下的所有文件
-            var files = System.IO.Directory.GetFiles(path);
-            foreach (var file in files)
+            if (!Directory.Exists(path))
             {
-                var name = System.IO.Path.GetFileNameWithoutExtension(file);
-                var str = System.IO.File.ReadAllText(file);
-                var pairs = Load(str);
-                dict.Add(name, pairs);
+                return dict;
+            }
+
+            //遍历path下的所有文件
+            foreach (var file in Directory.GetFiles(path))
+            {
+                var name = Path.GetFileNameWithoutExtension(file);
+                if (dict.ContainsKey(name))
+                {
+                    continue;
+                }
+                try
+                {
+                    dict.Add(name, Load(File.ReadAllText(file)));
+                }
+                catch (Exception e)
+                {
+                    LogUtils.LogError($"读取{file}失败：{e.Message}");
+                }
             }
             return dict;
         }
+
         private static List<Pair> Load(string str)
         {
             var pairs = new List<Pair>();
-            var lines = str.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = str.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
                 var parts = line.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                if(parts.Length < 2) continue;
-                var pair = new Pair(parts[0].Trim(), parts[1].Trim());
-                pairs.Add(pair);
+                if (parts.Length < 2) continue;
+                pairs.Add(new Pair(parts[0].Trim(), parts[1].Trim()));
             }
             return pairs;
         }

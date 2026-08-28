@@ -345,3 +345,7 @@ ASALocalRun/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# WebDrivers are downloaded automatically by Selenium Manager - do not commit
+data/web-drivers/
+data/config.json

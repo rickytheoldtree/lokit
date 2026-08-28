@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LocalizationTranslationWPF.Data
+﻿namespace LocalizationTranslationWPF.Data
 {
+    /// <summary>
+    /// 一种语言的“文件名-ISO代码”对应关系
+    /// </summary>
     public struct Pair
     {
         public Pair(string name, string isoCode)
@@ -13,6 +10,7 @@ namespace LocalizationTranslationWPF.Data
             Name = name;
             this.isoCode = isoCode;
         }
+
         public string Name { get; }
         public string isoCode;
 

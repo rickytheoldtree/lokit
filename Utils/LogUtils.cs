@@ -8,62 +8,32 @@ namespace LocalizationTranslationWPF.Utils
 {
     public static class LogUtils
     {
-        private static void UseLogBox(Action<RichTextBox> action)
+        public static void Log(string text) => Append(text, Brushes.Green);
+
+        public static void LogError(string text) => Append(text, Brushes.Red);
+
+        /// <summary>
+        /// 追加一行带颜色的日志，可从任意线程调用
+        /// </summary>
+        private static void Append(string text, Brush color)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            var app = Application.Current;
+            if (app == null)
             {
-                var logBox = Application.Current.MainWindow?.FindName("LogBox") as RichTextBox;
-                if (logBox != null)
+                return;
+            }
+
+            app.Dispatcher.Invoke(() =>
+            {
+                if (app.MainWindow?.FindName("LogBox") is not RichTextBox logBox)
                 {
-                    action(logBox);
+                    return;
                 }
-            });
-        }
 
-        public static void Log(string text)
-        {
-            UseLogBox(logBox =>
-            {
-                // 创建一个新的文本范围
                 var paragraph = new Paragraph();
-
-                // 创建一个带有绿色颜色的 Run
-                var run = new Run($"[{GetTime()}] {text}")
-                {
-                    Foreground = Brushes.Green
-                };
-
-                // 将 Run 添加到段落中
-                paragraph.Inlines.Add(run);
-
-                // 将段落添加到 RichTextBox
+                paragraph.Inlines.Add(new Run($"[{GetTime()}] {text}") { Foreground = color });
                 logBox.Document.Blocks.Add(paragraph);
-
-                // 滚动到最底部
-                logBox.ScrollToEnd();
-            });
-        }
-
-        public static void LogError(string text)
-        {
-            UseLogBox(logBox =>
-            {
-                // 创建一个新的文本范围
-                var paragraph = new Paragraph();
-
-                // 创建一个带有红色颜色的 Run
-                var run = new Run($"[{GetTime()}] {text}")
-                {
-                    Foreground = Brushes.Red
-                };
-
-                // 将 Run 添加到段落中
-                paragraph.Inlines.Add(run);
-
-                // 将段落添加到 RichTextBox
-                logBox.Document.Blocks.Add(paragraph);
-
-                // 滚动到最底部
+                //滚动到最底部
                 logBox.ScrollToEnd();
             });
         }

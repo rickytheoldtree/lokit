@@ -2,9 +2,11 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <!-- 目标是 .NET 8；机器上只装了更高版本时允许向上滚动，避免"必须安装 .NET 8"直接起不来 -->
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,7 +30,8 @@
 
   <ItemGroup>
     <PackageReference Include="CHTCHSConv" Version="1.0.0" />
-    <PackageReference Include="Selenium.WebDriver" Version="4.15.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Selenium.WebDriver" Version="4.48.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,18 +44,6 @@
 
   <ItemGroup>
     <Content Include="README.md">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <None Remove="data\web-drivers\chromedriver.exe" />
-    <Content Include="data\web-drivers\chromedriver.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <None Remove="data\web-drivers\geckodriver.exe" />
-    <Content Include="data\web-drivers\geckodriver.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <None Remove="data\web-drivers\msedgedriver.exe" />
-    <Content Include="data\web-drivers\msedgedriver.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Remove="data\iso\Example.txt" />

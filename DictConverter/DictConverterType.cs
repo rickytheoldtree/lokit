@@ -7,22 +7,25 @@ namespace LocalizationTranslationWPF.DictConverter
     {
         public string Name { get; }
         public Type type;
+
         public DictConverterType(Type type)
         {
             this.type = type;
-            if(type == null)
+            if (type == null)
             {
                 Name = "未知";
                 return;
             }
-            var IDictConverter = Activator.CreateInstance(type) as IDictConverter.IDictConverter;
-            if (IDictConverter == null)
+
+            try
+            {
+                Name = Activator.CreateInstance(type) is IDictConverter.IDictConverter converter
+                    ? converter.NameForShow
+                    : type.Name;
+            }
+            catch (Exception)
             {
                 Name = type.Name;
-            }
-            else
-            {
-                Name = IDictConverter.NameForShow;
             }
         }
     }

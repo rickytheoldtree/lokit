@@ -17,7 +17,7 @@ namespace LocalizationTranslationWPF.Common
             }
         }
 
-        public BindableProperty(T value = default(T))
+        public BindableProperty(T value = default!)
         {
             this.value = value;
         }

@@ -10,85 +10,16 @@ namespace LocalizationTranslationWPF.Utils
 {
     public static class ConfigUtils
     {
-        public static Config Config => config ??= Load();
-        private static Config? config;
         public const string DefaultAIPrompt = "你是休闲游戏的翻译官，你需要将游戏中的文本翻译成指定语言。" +
                                               "接下来你将翻译我提供的json格式文件，你需要翻译成纯文本形式的json，一定一定不要markdown代码块，否则对我来说没有意义!" +
                                               "如果翻译内容里出现了占位符，请务必保留，请确保翻译后的文本中也有这些标记，且数量不变。" +
                                               "请在最后用[end]结束你的翻译。" +
                                               "请将以下内容翻译为{0}对应的语言：{1}";
 
-        static ConfigUtils()
-        {
-            WebDriver.SetWithoutInvoke(Config.webDriverType);
-            WebDriver.Register(type =>
-            {
-                Config.webDriverType = type;
-                Save();
-            });
+        public static Config Config => config ??= Load();
+        private static Config? config;
 
-            DictConverter.SetWithoutInvoke(DictConverterUtils.GetConverterType(Config.dictConverter.type));
-            DictConverter.Register(type =>
-            {
-                Config.dictConverter = new DictConverterType(type);
-                Save();
-            });
-
-            IsoPairIndex.SetWithoutInvoke(Config.isoPairIndex);
-            IsoPairIndex.Register(index =>
-            {
-                Config.isoPairIndex = index;
-                Save();
-            });
-
-            SourceLangIndex.SetWithoutInvoke(0);
-            SourceLangIndex.Register(index => { SourceLang = PairUtils.GetPairs(IsoPairIndex.Value)[index]; });
-
-            TargetLangIndex.SetWithoutInvoke(0);
-            TargetLangIndex.Register(index => { TargetLang = PairUtils.GetPairs(IsoPairIndex.Value)[index]; });
-
-            TranslateMethod.SetWithoutInvoke(Config.translateMethod);
-            TranslateMethod.Register(method =>
-            {
-                Config.translateMethod = method;
-                Save();
-            });
-            
-            TargetLangAmount.SetWithoutInvoke(Config.targetLangAmount);
-            TargetLangAmount.Register(amount =>
-            {
-                Config.targetLangAmount = amount;
-                Save();
-            });
-
-            ApiEndpoint.SetWithoutInvoke(Config.aiEndpoint);
-            ApiEndpoint.Register(value =>
-            {
-                Config.aiEndpoint = value;
-                Save();
-            });
-
-            ApiKey.SetWithoutInvoke(Config.aiAPIKey);
-            ApiKey.Register(value =>
-            {
-                Config.aiAPIKey = value;
-                Save();
-            });
-
-            AIModel.SetWithoutInvoke(Config.aiModel);
-            AIModel.Register(value =>
-            {
-                Config.aiModel = value;
-                Save();
-            });
-
-            AIPrompt.SetWithoutInvoke(Config.aiPrompt);
-            AIPrompt.Register(value =>
-            {
-                Config.aiPrompt = value;
-                Save();
-            });
-        }
+        #region 可绑定配置项
 
         public static BindableProperty<WebDriverType> WebDriver { get; } = new();
 
@@ -101,7 +32,7 @@ namespace LocalizationTranslationWPF.Utils
         public static BindableProperty<int> TargetLangIndex { get; } = new();
 
         public static BindableProperty<TranslateMethod> TranslateMethod { get; } = new();
-        
+
         public static BindableProperty<TargetLangAmount> TargetLangAmount { get; } = new();
 
         public static BindableProperty<string> ApiEndpoint { get; } = new();
@@ -112,29 +43,83 @@ namespace LocalizationTranslationWPF.Utils
 
         public static BindableProperty<string> AIPrompt { get; } = new();
 
+        public static BindableProperty<string> DriverProxy { get; } = new();
+
         public static Pair SourceLang { get; private set; }
+
         public static Pair TargetLang { get; private set; }
+
+        #endregion
+
+        static ConfigUtils()
+        {
+            Bind(WebDriver, Config.webDriverType, value => Config.webDriverType = value);
+            Bind(DictConverter, DictConverterUtils.GetConverterType(Config.dictConverter.type),
+                value => Config.dictConverter = new DictConverterType(value));
+            Bind(IsoPairIndex, Config.isoPairIndex, value => Config.isoPairIndex = value);
+            Bind(TranslateMethod, Config.translateMethod, value => Config.translateMethod = value);
+            Bind(TargetLangAmount, Config.targetLangAmount, value => Config.targetLangAmount = value);
+            Bind(ApiEndpoint, Config.aiEndpoint, value => Config.aiEndpoint = value);
+            Bind(ApiKey, Config.aiAPIKey, value => Config.aiAPIKey = value);
+            Bind(AIModel, Config.aiModel, value => Config.aiModel = value);
+            Bind(AIPrompt, Config.aiPrompt, value => Config.aiPrompt = value);
+            Bind(DriverProxy, Config.driverProxy, value => Config.driverProxy = value);
+
+            //源/目标语言只在本次运行内有效，不写入配置
+            SourceLangIndex.SetWithoutInvoke(0);
+            SourceLangIndex.Register(index => SourceLang = GetPair(index));
+
+            TargetLangIndex.SetWithoutInvoke(0);
+            TargetLangIndex.Register(index => TargetLang = GetPair(index));
+        }
+
+        /// <summary>
+        /// 用配置里的值初始化（不触发回调），之后每次变更都写回配置并保存
+        /// </summary>
+        private static void Bind<T>(BindableProperty<T> property, T initialValue, Action<T> apply)
+        {
+            property.SetWithoutInvoke(initialValue);
+            property.Register(value =>
+            {
+                apply(value);
+                Save();
+            });
+        }
+
+        private static Pair GetPair(int index)
+        {
+            var pairs = PairUtils.GetPairs(IsoPairIndex.Value);
+            return index >= 0 && index < pairs.Count ? pairs[index] : default;
+        }
 
         private static void Save()
         {
-            File.WriteAllText(PathUtils.ConfigPath, JsonConvert.SerializeObject(Config));
+            try
+            {
+                Directory.CreateDirectory(PathUtils.DataPath);
+                File.WriteAllText(PathUtils.ConfigPath, JsonConvert.SerializeObject(Config));
+            }
+            catch (Exception e)
+            {
+                LogUtils.LogError($"保存配置失败：{e.Message}");
+            }
         }
 
         private static Config Load()
         {
-            if (File.Exists(PathUtils.ConfigPath))
+            if (!File.Exists(PathUtils.ConfigPath))
             {
-                try
-                {
-                    var c = JsonConvert.DeserializeObject<Config>(File.ReadAllText(PathUtils.ConfigPath));
-                    return c ?? new Config();
-                }
-                catch (Exception)
-                {
-                    return new Config();
-                }
+                return new Config();
             }
-            return new Config();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<Config>(File.ReadAllText(PathUtils.ConfigPath)) ?? new Config();
+            }
+            catch (Exception)
+            {
+                return new Config();
+            }
         }
     }
 }

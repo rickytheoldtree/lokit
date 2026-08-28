@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -16,15 +14,11 @@ namespace LocalizationTranslationWPF.Translate
 {
     public class AIApiTranslator : IDisposable
     {
-        private const string DefaultPrompt =
-            "接下来你将翻译我提供的json格式文件，你需要翻译成纯文本形式的json，一定一定不要markdown代码块，否则对我来说没有意义!" +
-            "如果翻译内容里出现了占位符，请务必保留，请确保翻译后的文本中也有这些标记，且数量不变。" +
-            "那么现在，请将 {0} 翻译成 {1}";
-
         private readonly string apiKey;
         private readonly string endpoint;
         private readonly string modelName;
         private readonly string prompt;
+        private readonly HttpClient client = new();
 
         private AIApiTranslator(string apiKey, string endpoint, string modelName, string prompt)
         {
@@ -32,6 +26,14 @@ namespace LocalizationTranslationWPF.Translate
             this.endpoint = endpoint;
             this.modelName = modelName;
             this.prompt = prompt;
+            try
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", this.apiKey);
+            }
+            catch (FormatException)
+            {
+                throw new Exception("API Key格式不正确，请在设置页重新填写");
+            }
         }
 
         public static async Task Run(CancellationToken token)
@@ -44,166 +46,58 @@ namespace LocalizationTranslationWPF.Translate
                     throw new Exception("字典转换器类型错误");
                 }
 
-                var sourceLang = ConfigUtils.SourceLang;
-                var targetLang = ConfigUtils.TargetLang;
-                using var translator = new AIApiTranslator(ConfigUtils.Config.aiAPIKey, ConfigUtils.Config.aiEndpoint,
-                    ConfigUtils.Config.aiModel, ConfigUtils.Config.aiPrompt);
+                using var translator = new AIApiTranslator(ConfigUtils.ApiKey.Value, ConfigUtils.ApiEndpoint.Value,
+                    ConfigUtils.AIModel.Value, ConfigUtils.AIPrompt.Value);
 
-                switch (ConfigUtils.TargetLangAmount.Value)
-                {
-                    case Config.TargetLangAmount.All:
-                    {
-                        foreach (var pair in PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value))
-                        {
-                            token.ThrowIfCancellationRequested();
-                            targetLang = pair;
-                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
-                                    token))
-                            {
-                                LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            }
-                        }
-                        break;
-                    }
-                    case Config.TargetLangAmount.Remain:
-                    {
-                        var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
-                        var index = pairs.FindIndex(p => p.isoCode == targetLang.isoCode);
-                        if (index == -1)
-                        {
-                            LogUtils.LogError("目标语言不在剩余语言列表中");
-                            return;
-                        }
-
-                        for (var i = index; i < pairs.Count; i++)
-                        {
-                            token.ThrowIfCancellationRequested();
-                            targetLang = pairs[i];
-                            if (!await translator.TranslateAsync(sourceLang, targetLang, dictConverter,
-                                    token))
-                            {
-                                LogUtils.LogError($"翻译{targetLang.Name}失败");
-                            }
-                        }
-
-                        break;
-                    }
-                    case Config.TargetLangAmount.Single:
-                    default:
-                        await translator.TranslateAsync(sourceLang, targetLang, dictConverter, token);
-                        break;
-                }
+                await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token);
             }, token);
         }
 
-        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
+        private Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
             CancellationToken token)
         {
-            var originJsonPath = $"{PathUtils.InputPath}\\{from.Name}.json";
-            if (!File.Exists(originJsonPath))
-            {
-                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json不存在");
-                return false;
-            }
-
-            if (!IOUtils.TryInputJson(originJsonPath, converter, out var originJson) || originJson == null)
-            {
-                LogUtils.LogError($"{PathUtils.InputPath}\\{from.Name}.json读取出错，检查项目标准");
-                return false;
-            }
-            
-            if (from.isoCode == to.isoCode)
-            {
-                IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", originJson, converter);
-                LogUtils.Log($"跳过翻译{to.Name}，因为与源语言相同");
-                return true;
-            }
-
-            string result = await Translate(converter.Serialize(originJson), to, token);
-            if (token.IsCancellationRequested)
-            {
-                return false;
-            }
-
-            Dictionary<string, string>? dic;
-            try
-            {
-                if (!converter.TryDeserialize(result, out dic) || dic == null)
-                {
-                    LogUtils.LogError($"{from.Name}翻译失败，ai翻译结果格式错误");
-                    return false;
-                }
-            }
-            catch
-            {
-                LogUtils.LogError($"{from.Name}翻译失败，ai翻译结果格式错误");
-                return false;
-            }
-
-            if (!Directory.Exists(PathUtils.OutputPath))
-            {
-                Directory.CreateDirectory(PathUtils.OutputPath);
-            }
-
-            IOUtils.OutputJson($"{PathUtils.OutputPath}\\{to.Name}.json", dic, converter);
-            LogUtils.Log($"{to.Name}翻译完成，文件路径：{PathUtils.OutputPath}\\{to.Name}.json");
-            return true;
+            return TranslationJob.TranslateWithAiAsync(from, to, converter, Translate, token);
         }
 
         private async Task<string> Translate(string text, Pair to, CancellationToken token)
         {
-            // Format the prompt with the input text and target language (to.Name)
-            var contentText = string.Format(DefaultPrompt, text, to.Name);
-
-            // Prepare the request payload
             var requestBody = new
             {
                 model = modelName,
                 messages = new[]
                 {
-                    new { role = "system", content = prompt },
-                    new { role = "user", content = contentText }
+                    new { role = "user", content = TranslationJob.FormatPrompt(prompt, to, text) }
                 }
             };
 
-            var jsonRequestBody = JsonConvert.SerializeObject(requestBody);
+            var httpContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8,
+                "application/json");
 
-            using var client = new HttpClient();
-            // Set the authorization header with your API key
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-            var httpContent = new StringContent(jsonRequestBody, Encoding.UTF8, "application/json");
-
-            // Send POST request to the ChatGPT API endpoint
             var response = await client.PostAsync(endpoint, httpContent, token);
+            var responseContent = await response.Content.ReadAsStringAsync(token);
             if (token.IsCancellationRequested)
             {
                 return string.Empty;
             }
 
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                var responseContent = await response.Content.ReadAsStringAsync(token);
-                if (token.IsCancellationRequested)
-                {
-                    return string.Empty;
-                }
-
-                var jsonResponse = JObject.Parse(responseContent);
-                return jsonResponse["choices"]?[0]?["message"]?["content"]?.ToString();
+                throw new Exception($"API request failed: {response.StatusCode}, {responseContent}");
             }
 
-            var errorContent = await response.Content.ReadAsStringAsync(token);
-            if (token.IsCancellationRequested)
+            var content = JObject.Parse(responseContent)["choices"]?[0]?["message"]?["content"]?.ToString();
+            if (content == null)
             {
+                LogUtils.LogError($"接口返回内容无法解析：{responseContent}");
                 return string.Empty;
             }
 
-            throw new Exception($"API request failed: {response.StatusCode}, {errorContent}");
+            return content;
         }
 
         public void Dispose()
         {
+            client.Dispose();
         }
     }
 }
