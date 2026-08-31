@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalizationTranslationWPF", "LocalizationTranslationWPF.csproj", "{B0E56B39-3BFF-4AEC-8951-A2F0947D3D33}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDictConverter", "..\IDictConverter\IDictConverter.csproj", "{4A57034D-175D-429F-8750-5DADC001FE17}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDictConverter", "IDictConverter\IDictConverter.csproj", "{4A57034D-175D-429F-8750-5DADC001FE17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -24,9 +24,9 @@ namespace LocalizationTranslationWPF.Translate
         {
         }
 
-        public static async Task Run(CancellationToken token)
+        public static async Task<bool> Run(CancellationToken token, bool includeChanged = false)
         {
-            await Task.Run(async () =>
+            return await Task.Run(async () =>
             {
                 var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if (dictConverter == null)
@@ -36,23 +36,13 @@ namespace LocalizationTranslationWPF.Translate
 
                 var driver = await WebDriverProvider.PrepareAsync(ConfigUtils.WebDriver.Value, token);
                 using var translator = new GoogleWebDriverTranslator(driver.Type, driver.DriverPath);
-                await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token);
+                return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token, includeChanged);
             }, token);
         }
 
-        private async Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
-            CancellationToken token)
+        private async Task<Dictionary<string, string>?> TranslateAsync(Pair from, Pair to,
+            Dictionary<string, string> originJson, IDictConverter.IDictConverter converter, CancellationToken token)
         {
-            if (!TranslationJob.TryLoadSource(from, converter, out var originJson) || originJson == null)
-            {
-                return false;
-            }
-
-            if (TranslationJob.CopyWhenSameLanguage(from, to, originJson, converter))
-            {
-                return true;
-            }
-
             var values = new List<string>();
             var sb = new StringBuilder();
             foreach (var d in originJson)
@@ -61,7 +51,7 @@ namespace LocalizationTranslationWPF.Translate
                 if (newText.Length > MaxRequestLength)
                 {
                     LogUtils.LogError($"单个文本长度超过{MaxRequestLength}，无法翻译：{d.Key}；请自行切分后重新尝试");
-                    return false;
+                    return null;
                 }
 
                 //超长时先把已攒下的一批发出去
@@ -69,7 +59,7 @@ namespace LocalizationTranslationWPF.Translate
                 {
                     if (!await Translate(sb.ToString(), from.isoCode, to.isoCode, values, token))
                     {
-                        return false;
+                        return null;
                     }
 
                     sb.Clear();
@@ -82,7 +72,7 @@ namespace LocalizationTranslationWPF.Translate
             {
                 if (!await Translate(sb.ToString(), from.isoCode, to.isoCode, values, token))
                 {
-                    return false;
+                    return null;
                 }
             }
 
@@ -90,7 +80,7 @@ namespace LocalizationTranslationWPF.Translate
             if (keys.Count != values.Count)
             {
                 LogUtils.LogError("翻译后数量与原文本数量不一致");
-                return false;
+                return null;
             }
 
             var dic = new Dictionary<string, string>();
@@ -99,8 +89,7 @@ namespace LocalizationTranslationWPF.Translate
                 dic.Add(keys[i], values[i]);
             }
 
-            TranslationJob.WriteOutput(to, dic, converter);
-            return true;
+            return dic;
         }
 
         private async Task<bool> Translate(string txt, string from, string to, List<string> results,

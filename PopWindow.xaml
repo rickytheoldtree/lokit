@@ -1,51 +1,93 @@
-﻿<Window x:Class="LocalizationTranslationWPF.PopWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="任务进行中..." Height="200" Width="350" 
-        WindowStyle="None" ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
-        Background="Transparent" AllowsTransparency="True">
-    <Border CornerRadius="10" BorderThickness="1" BorderBrush="#FFCCCCCC" Background="White">
-        <Grid Margin="20">
+<ui:FluentWindow x:Class="LocalizationTranslationWPF.PopWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="翻译任务 · 本地化工具"
+                 Height="374" Width="548"
+                 MinHeight="374" MinWidth="548"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 WindowStartupLocation="CenterOwner"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="Mica">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar x:Name="TaskTitleBar" Grid.Row="0" Title="翻译任务"
+                     ShowMinimize="False" ShowMaximize="False" ShowClose="False">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="Translate24" FontSize="16"
+                               Foreground="{DynamicResource AccentFillColorDefaultBrush}" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <Grid Grid.Row="1" Margin="26,14,26,24">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <!-- 标题提示文本 -->
-            <TextBlock Name="TextBlock" Text="任务正在运行，请稍候..." FontSize="16" FontWeight="Bold" 
-                       Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-            <!-- 进度条，可提示任务正在进行中 -->
-            <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="20" Margin="0,0,0,10"/>
-            <!-- 自定义按钮样式 -->
-            <Button Grid.Row="2" x:Name="Btn" Content="取消任务" 
-                    Width="100" Height="30" HorizontalAlignment="Center" 
-                    Background="#FF007ACC" Foreground="White" BorderThickness="0" 
-                    Cursor="Hand" Click="BtnCancelClick">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" 
-                                            CornerRadius="5" Padding="5">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                            <!-- 鼠标悬停时变色 -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FF005A9E"/>
-                            </Trigger>
-                            <!-- 鼠标按下时变色 -->
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#FF003F73"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
+
+            <TextBlock Text="正在处理本地化内容"
+                       FontSize="24" FontWeight="SemiBold" />
+            <TextBlock x:Name="TextBlock" Grid.Row="1"
+                       Text="任务正在运行，请稍候…"
+                       Margin="0,5,0,0" FontSize="13" Opacity="0.65"
+                       TextWrapping="Wrap" />
+
+            <ui:Card Grid.Row="2" Margin="0,20,0,0" Padding="18">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="46" />
+                        <ColumnDefinition Width="14" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <ContentControl x:Name="TaskAppLogo" Content="Logo"
+                                    ContentTemplate="{StaticResource AppLogoTemplate}"
+                                    Width="42" Height="42" VerticalAlignment="Center"
+                                    IsHitTestVisible="False" />
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <TextBlock Text="当前步骤" FontSize="12" Opacity="0.58" />
+                        <TextBlock x:Name="LatestStepTextBlock"
+                                   Text="正在准备翻译环境…"
+                                   Margin="0,4,0,0" FontSize="14" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Grid>
+            </ui:Card>
+
+            <ProgressBar x:Name="TaskProgressBar" Grid.Row="3"
+                         IsIndeterminate="True" Height="4" Margin="2,18,2,0" />
+
+            <TextBlock Grid.Row="4"
+                       Text="已完成的语言会立即保存到项目工作副本；取消不会覆盖正在处理的语言。"
+                       Margin="0,15,0,0" FontSize="12" Opacity="0.58"
+                       TextWrapping="Wrap" />
+
+            <Grid Grid.Row="5" Margin="0,18,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="7" Height="7"
+                             Fill="{DynamicResource AccentFillColorDefaultBrush}"
+                             Margin="0,0,8,0" />
+                    <TextBlock x:Name="ElapsedTextBlock" Text="已运行 00:00"
+                               FontSize="12" Opacity="0.65" VerticalAlignment="Center" />
+                </StackPanel>
+                <ui:Button x:Name="Btn" Grid.Column="1"
+                           Content="取消任务" MinWidth="116" Height="36"
+                           Appearance="Secondary"
+                           Icon="{ui:SymbolIcon Dismiss24}"
+                           Click="BtnCancelClick" />
+            </Grid>
         </Grid>
-    </Border>
-</Window>
+    </Grid>
+</ui:FluentWindow>

@@ -1,46 +1,84 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Media;
 
 namespace LocalizationTranslationWPF.Utils
 {
+    public enum LogLevel
+    {
+        Information,
+        Error,
+    }
+
+    public sealed record LogEntry(DateTime Timestamp, string Text, LogLevel Level);
+
     public static class LogUtils
     {
-        public static void Log(string text) => Append(text, Brushes.Green);
+        private const int MaxEntries = 5000;
 
-        public static void LogError(string text) => Append(text, Brushes.Red);
+        private static readonly object SyncRoot = new();
+        private static readonly List<LogEntry> Entries = new();
+        public static event Action<LogEntry>? EntryAdded;
 
-        /// <summary>
-        /// 追加一行带颜色的日志，可从任意线程调用
-        /// </summary>
-        private static void Append(string text, Brush color)
+        public static void Log(string text) => Append(text, LogLevel.Information);
+
+        public static void LogError(string text) => Append(text, LogLevel.Error);
+
+        public static IReadOnlyList<LogEntry> GetEntries()
         {
-            var app = Application.Current;
-            if (app == null)
+            lock (SyncRoot)
             {
+                return Entries.ToArray();
+            }
+        }
+
+        public static void Clear()
+        {
+            lock (SyncRoot)
+            {
+                Entries.Clear();
+            }
+        }
+
+        private static void Append(string text, LogLevel level)
+        {
+            var entry = new LogEntry(DateTime.Now, text, level);
+            lock (SyncRoot)
+            {
+                Entries.Add(entry);
+                if (Entries.Count > MaxEntries)
+                {
+                    Entries.RemoveRange(0, Entries.Count - MaxEntries);
+                }
+            }
+
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null)
+            {
+                RaiseEntryAdded(entry);
                 return;
             }
 
-            app.Dispatcher.Invoke(() =>
+            if (dispatcher.CheckAccess())
             {
-                if (app.MainWindow?.FindName("LogBox") is not RichTextBox logBox)
-                {
-                    return;
-                }
-
-                var paragraph = new Paragraph();
-                paragraph.Inlines.Add(new Run($"[{GetTime()}] {text}") { Foreground = color });
-                logBox.Document.Blocks.Add(paragraph);
-                //滚动到最底部
-                logBox.ScrollToEnd();
-            });
+                RaiseEntryAdded(entry);
+            }
+            else
+            {
+                dispatcher.BeginInvoke(() => RaiseEntryAdded(entry));
+            }
         }
 
-        private static string GetTime()
+        private static void RaiseEntryAdded(LogEntry entry)
         {
-            return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            try
+            {
+                EntryAdded?.Invoke(entry);
+            }
+            catch
+            {
+                // 日志显示失败不应中断正在执行的翻译任务。
+            }
         }
     }
 }

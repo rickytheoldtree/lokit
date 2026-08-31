@@ -11,9 +11,17 @@
 
   <ItemGroup>
     <Compile Remove="lib\**" />
+    <Compile Remove="IDictConverter\**" />
+    <Compile Remove="Tests\**" />
+    <Page Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Tests\**" />
     <EmbeddedResource Remove="lib\**" />
+    <EmbeddedResource Remove="IDictConverter\**" />
     <None Remove="lib\**" />
+    <None Remove="IDictConverter\**" />
     <Page Remove="lib\**" />
+    <Page Remove="IDictConverter\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,9 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CHTCHSConv" Version="1.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Selenium.WebDriver" Version="4.48.0" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,7 +47,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IDictConverter\IDictConverter.csproj" />
+    <ProjectReference Include="IDictConverter\IDictConverter.csproj" />
   </ItemGroup>
 
   <ItemGroup>

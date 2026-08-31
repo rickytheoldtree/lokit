@@ -12,9 +12,11 @@ namespace LocalizationTranslationWPF.Data
         public int isoPairIndex;
         public TranslateMethod translateMethod;
         public TargetLangAmount targetLangAmount;
-        public string aiAPIKey = "输入你的apikey";
+        public AppThemeMode appThemeMode = AppThemeMode.System;
+        public string aiAPIKey = "";
         public string aiEndpoint = "https://api.deepseek.com/chat/completions";
         public string aiModel = "deepseek-chat";
+        public string lastProject = "";
 
         public string aiPrompt = ConfigUtils.DefaultAIPrompt;
 
@@ -42,9 +44,16 @@ namespace LocalizationTranslationWPF.Data
 
         public enum TargetLangAmount
         {
-            Single,
-            Remain,
-            All,
+            Single = 0,
+            All = 2,
+        }
+
+        public enum AppThemeMode
+        {
+            // Values are persisted; append new modes instead of reordering.
+            System = 0,
+            Light = 1,
+            Dark = 2,
         }
     }
 }

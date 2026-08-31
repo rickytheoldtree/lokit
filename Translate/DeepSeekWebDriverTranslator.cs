@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
@@ -55,11 +56,26 @@ namespace LocalizationTranslationWPF.Translate
         private const string SetTextAreaValueScript = """
             const textArea = arguments[0];
             const value = arguments[1];
+            const previousValue = textArea.value;
             const valueSetter = Object.getOwnPropertyDescriptor(
                 HTMLTextAreaElement.prototype, 'value').set;
+            textArea.focus();
             valueSetter.call(textArea, value);
-            textArea.dispatchEvent(new Event('input', { bubbles: true }));
+            // React may keep a private value tracker. Resetting it to the previous value makes
+            // the synthetic input event observable even when the native setter was bypassed.
+            if (textArea._valueTracker) {
+                textArea._valueTracker.setValue(previousValue);
+            }
+            const inputEvent = typeof InputEvent === 'function'
+                ? new InputEvent('input', {
+                    bubbles: true,
+                    inputType: 'insertText',
+                    data: value
+                })
+                : new Event('input', { bubbles: true });
+            textArea.dispatchEvent(inputEvent);
             textArea.dispatchEvent(new Event('change', { bubbles: true }));
+            return textArea.value;
             """;
 
         private readonly string prompt;
@@ -73,9 +89,9 @@ namespace LocalizationTranslationWPF.Translate
             this.deepThinking = deepThinking;
         }
 
-        public static async Task Run(CancellationToken token, bool deepThinking)
+        public static async Task<bool> Run(CancellationToken token, bool deepThinking, bool includeChanged = false)
         {
-            await Task.Run(async () =>
+            return await Task.Run(async () =>
             {
                 var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if (dictConverter == null)
@@ -89,20 +105,20 @@ namespace LocalizationTranslationWPF.Translate
                         deepThinking);
                 if (!await translator.LoginTask(token))
                 {
-                    return;
+                    return false;
                 }
                 LogUtils.Log("登录成功");
 
                 var random = new Random();
-                await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync,
-                    () => RandomDelay(random, token), token);
+                return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync,
+                    () => RandomDelay(random, token), token, includeChanged);
             }, token);
         }
 
-        private Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
-            CancellationToken token)
+        private Task<Dictionary<string, string>?> TranslateAsync(Pair from, Pair to, Dictionary<string, string> source,
+            IDictConverter.IDictConverter converter, CancellationToken token)
         {
-            return TranslationJob.TranslateWithAiAsync(from, to, converter, Translate, token);
+            return TranslationJob.TranslateWithAiAsync(source, to, converter, Translate, token);
         }
 
         private async Task<bool> LoginTask(CancellationToken token)
@@ -184,35 +200,38 @@ namespace LocalizationTranslationWPF.Translate
 
         private async Task<bool> FillTextArea(IWebElement textArea, string contentText, CancellationToken token)
         {
-            try
+            string? lastError = null;
+            for (var attempt = 0; attempt < 3; attempt++)
             {
-                textArea.Click();
-                var js = (IJavaScriptExecutor)webDriver!;
-                js.ExecuteScript(SetTextAreaValueScript, textArea, contentText);
-
-                //不能只检查 DOM value；只有发送控件同步变为可用，才说明前端状态真正收到了内容。
-                if (await WaitUntilInputAccepted(textArea, contentText, 20, token))
+                token.ThrowIfCancellationRequested();
+                var currentTextArea = attempt == 0 ? textArea : FindVisibleElement(ComposerBy);
+                if (currentTextArea == null)
                 {
-                    return true;
+                    lastError = "输入框在页面刷新后不可用";
+                    await Task.Delay(200, token);
+                    continue;
                 }
 
-                LogUtils.LogError("DeepSeek输入框未接受脚本填充，改用键盘输入");
-                textArea.Click();
-                textArea.SendKeys(Keys.Control + "a");
-                textArea.SendKeys(Keys.Backspace);
-                textArea.SendKeys(contentText);
-                if (await WaitUntilInputAccepted(textArea, contentText, 50, token))
+                try
                 {
-                    return true;
+                    currentTextArea.Click();
+                    var js = (IJavaScriptExecutor)webDriver!;
+                    var written = js.ExecuteScript(SetTextAreaValueScript, currentTextArea, contentText)?.ToString();
+                    if (written == contentText &&
+                        await WaitUntilInputAccepted(currentTextArea, contentText, 30, token))
+                    {
+                        return true;
+                    }
+                    lastError = "页面没有接受一次性文本注入";
                 }
-            }
-            catch (WebDriverException e)
-            {
-                LogUtils.LogError($"填写DeepSeek输入框失败：{e.Message}");
-                return false;
+                catch (WebDriverException error)
+                {
+                    lastError = error.Message;
+                }
+                await Task.Delay(200, token);
             }
 
-            LogUtils.LogError("填写DeepSeek输入框失败：输入内容未出现在页面中");
+            LogUtils.LogError($"填写DeepSeek输入框失败：{lastError}。已停止本次语言，未使用逐字键盘输入或系统剪贴板。");
             return false;
         }
 

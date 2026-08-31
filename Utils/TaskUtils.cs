@@ -37,41 +37,5 @@ namespace LocalizationTranslationWPF.Utils
             return true;
         }
 
-        /// <summary>
-        /// 把输出文件夹里的新译文合并进合并源文件，重复key以新译文为准
-        /// </summary>
-        public static bool CombineTask(Pair pair)
-        {
-            var sourcePath = PathUtils.CombineSourceFile(pair.Name);
-            var newPath = PathUtils.OutputFile(pair.Name);
-            var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
-            if (dictConverter == null)
-            {
-                LogUtils.LogError("无法找到转换器");
-                return false;
-            }
-
-            if (!IOUtils.TryInputJson(sourcePath, dictConverter, out var sourceDict) || sourceDict == null)
-            {
-                LogUtils.LogError($"读取{sourcePath}失败");
-                return false;
-            }
-
-            if (!IOUtils.TryInputJson(newPath, dictConverter, out var newDict) || newDict == null)
-            {
-                LogUtils.LogError($"读取{newPath}失败");
-                return false;
-            }
-
-            foreach (var kv in newDict)
-            {
-                sourceDict[kv.Key] = kv.Value;
-            }
-
-            var outputPath = PathUtils.CombineOutputFile(pair.Name);
-            IOUtils.OutputJson(outputPath, sourceDict, dictConverter);
-            LogUtils.Log($"{pair.Name}合并完成，文件路径：{outputPath}");
-            return true;
-        }
     }
 }

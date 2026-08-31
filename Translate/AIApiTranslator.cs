@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
@@ -36,9 +37,9 @@ namespace LocalizationTranslationWPF.Translate
             }
         }
 
-        public static async Task Run(CancellationToken token)
+        public static async Task<bool> Run(CancellationToken token, bool includeChanged = false)
         {
-            await Task.Run(async () =>
+            return await Task.Run(async () =>
             {
                 var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if (dictConverter == null)
@@ -49,14 +50,14 @@ namespace LocalizationTranslationWPF.Translate
                 using var translator = new AIApiTranslator(ConfigUtils.ApiKey.Value, ConfigUtils.ApiEndpoint.Value,
                     ConfigUtils.AIModel.Value, ConfigUtils.AIPrompt.Value);
 
-                await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token);
+                return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token, includeChanged);
             }, token);
         }
 
-        private Task<bool> TranslateAsync(Pair from, Pair to, IDictConverter.IDictConverter converter,
-            CancellationToken token)
+        private Task<Dictionary<string, string>?> TranslateAsync(Pair from, Pair to, Dictionary<string, string> source,
+            IDictConverter.IDictConverter converter, CancellationToken token)
         {
-            return TranslationJob.TranslateWithAiAsync(from, to, converter, Translate, token);
+            return TranslationJob.TranslateWithAiAsync(source, to, converter, Translate, token);
         }
 
         private async Task<string> Translate(string text, Pair to, CancellationToken token)
@@ -85,14 +86,22 @@ namespace LocalizationTranslationWPF.Translate
                 throw new Exception($"API request failed: {response.StatusCode}, {responseContent}");
             }
 
-            var content = JObject.Parse(responseContent)["choices"]?[0]?["message"]?["content"]?.ToString();
-            if (content == null)
+            try
             {
-                LogUtils.LogError($"接口返回内容无法解析：{responseContent}");
-                return string.Empty;
+                var envelope = JToken.Parse(responseContent);
+                var content = envelope["choices"]?[0]?["message"]?["content"]?.ToString()
+                              ?? envelope["choices"]?[0]?["text"]?.ToString()
+                              ?? envelope["output_text"]?.ToString();
+                // Some compatible endpoints return the translated object itself instead of an
+                // OpenAI-style envelope. Let the shared structured-response parser validate it.
+                return content ?? responseContent;
             }
-
-            return content;
+            catch (JsonException)
+            {
+                // A few proxy endpoints return model text directly despite a JSON content type.
+                // It may still contain a valid fenced/embedded payload, so validate it upstream.
+                return responseContent;
+            }
         }
 
         public void Dispose()

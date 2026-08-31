@@ -17,8 +17,16 @@ namespace DictConverter
 
         public bool TryDeserialize(string text, out Dictionary<string, string>? dict)
         {
-            dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(text);
-            return dict != null;
+            try
+            {
+                dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(text);
+                return dict != null;
+            }
+            catch (JsonException)
+            {
+                dict = null;
+                return false;
+            }
         }
     }
 }
