@@ -1,8 +1,5 @@
-﻿using LocalizationTranslationWPF.Data;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
+using LocalizationTranslationWPF.Data;
 
 namespace LocalizationTranslationWPF.Utils
 {
@@ -60,7 +57,7 @@ namespace LocalizationTranslationWPF.Utils
         private static List<Pair> Load(string str)
         {
             var pairs = new List<Pair>();
-            var lines = str.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = str.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             foreach (var line in lines)
             {
                 var parts = line.Split(',', StringSplitOptions.RemoveEmptyEntries);

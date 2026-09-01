@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -65,11 +62,6 @@ namespace LocalizationTranslationWPF.Projects
                 language.Baseline = Copy(language.Working);
                 language.BaselineHash = Hash(bytes);
             }
-            var source = Language(data, sourceLanguage).Working;
-            foreach (var language in data.Languages)
-                language.TranslatedSource = source.Where(p => language.Working.ContainsKey(p.Key))
-                    .ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
-
             var projectBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data, Formatting.Indented));
             // Publish the complete project atomically without overwriting a concurrently created file.
             IOUtils.AtomicWriteAllBytes(path, projectBytes, overwrite: false);
@@ -121,12 +113,6 @@ namespace LocalizationTranslationWPF.Projects
             {
                 var language = Language(next, name);
                 if (!Same(language.Working, expected)) throw new InvalidOperationException("工作数据已变化，请重新加载后编辑。");
-                var source = Language(next, next.SourceLanguage).Working;
-                if (name != next.SourceLanguage)
-                {
-                    foreach (var entry in values.Where(p => !expected.TryGetValue(p.Key, out var old) || p.Value != old))
-                        if (source.TryGetValue(entry.Key, out var value)) language.TranslatedSource[entry.Key] = value;
-                }
                 language.Working = Copy(values);
             });
         }
@@ -140,7 +126,6 @@ namespace LocalizationTranslationWPF.Projects
                     foreach (var key in selected)
                     {
                         language.Working.Remove(key);
-                        language.TranslatedSource.Remove(key);
                         language.RetranslateKeys.Remove(key);
                     }
             });
@@ -172,7 +157,7 @@ namespace LocalizationTranslationWPF.Projects
             });
         }
 
-        public TranslationInput PrepareTranslation(string target, Dictionary<string, string> sourceSnapshot, bool includeChanged)
+        public TranslationInput PrepareTranslation(string target, Dictionary<string, string> sourceSnapshot)
         {
             lock (sync)
             {
@@ -180,8 +165,7 @@ namespace LocalizationTranslationWPF.Projects
                 if (target == document.SourceLanguage) throw new InvalidOperationException("源语言不能作为翻译目标。");
                 var entries = sourceSnapshot.Where(p => language.RetranslateKeys.Contains(p.Key) ||
                     !language.Working.TryGetValue(p.Key, out var value) ||
-                    string.IsNullOrWhiteSpace(value) || (includeChanged &&
-                    (!language.TranslatedSource.TryGetValue(p.Key, out var previous) || previous != p.Value)))
+                    string.IsNullOrWhiteSpace(value))
                     .ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
                 return new TranslationInput(document.Id, target, entries, Copy(language.Working),
                     language.RetranslateKeys.ToHashSet(StringComparer.Ordinal));
@@ -204,7 +188,6 @@ namespace LocalizationTranslationWPF.Projects
                     if (target.Working.TryGetValue(entry.Key, out var now) != existed || now != before)
                         throw new InvalidOperationException($"译文“{entry.Key}”已被修改，未覆盖当前内容。");
                     target.Working[entry.Key] = translated[entry.Key];
-                    target.TranslatedSource[entry.Key] = entry.Value;
                     if (input.RetranslateBefore.Contains(entry.Key)) target.RetranslateKeys.Remove(entry.Key);
                 }
             });
@@ -307,8 +290,12 @@ namespace LocalizationTranslationWPF.Projects
                 {
                     var path = TargetPath(document, item.Language);
                     if (CurrentHash(path) != item.PublishedHash) throw new IOException($"{item.Language} 发布后已被外部修改，不能直接恢复。");
-                    reverse.Add(new BackupFile { Language = item.Language, Before = File.ReadAllBytes(path),
-                        PublishedHash = item.Before == null ? null : Hash(item.Before) });
+                    reverse.Add(new BackupFile
+                    {
+                        Language = item.Language,
+                        Before = File.ReadAllBytes(path),
+                        PublishedHash = item.Before == null ? null : Hash(item.Before)
+                    });
                 }
                 var next = Clone(document);
                 var converter = CreateConverter(ConverterType);
@@ -407,13 +394,12 @@ namespace LocalizationTranslationWPF.Projects
                     language.Name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
                     language.Name is "." or ".." || language.Name.EndsWith('.') || language.Name.EndsWith(' ') ||
                     !names.Add(language.Name) || string.IsNullOrWhiteSpace(language.IsoCode) ||
-                    language.Working == null || language.Baseline == null || language.TranslatedSource == null ||
-                    language.RetranslateKeys == null)
+                    language.Working == null || language.Baseline == null || language.RetranslateKeys == null)
                     throw new InvalidDataException("语言表包含无效或重复的文件名/语言配置。");
                 if (Regex.IsMatch(language.Name, @"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)", RegexOptions.IgnoreCase))
                     throw new InvalidDataException("语言文件名不能使用 Windows 保留名称。");
-                if (language.Working.Values.Any(v => v == null) || language.Baseline.Values.Any(v => v == null) ||
-                    language.TranslatedSource.Values.Any(v => v == null)) throw new InvalidDataException("项目文本不能为 null。");
+                if (language.Working.Values.Any(v => v == null) || language.Baseline.Values.Any(v => v == null))
+                    throw new InvalidDataException("项目文本不能为 null。");
             }
             var source = Language(data, data.SourceLanguage);
             if (source.RetranslateKeys.Count > 0 || data.Languages.Any(language =>

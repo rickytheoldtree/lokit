@@ -1,15 +1,12 @@
+﻿using System.ComponentModel;
+using System.Data;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.Projects;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Linq;
 
 namespace LocalizationTranslationWPF.Editing
 {
     /// <summary>A language editor bound to a project snapshot, with no file paths or controls.</summary>
-    public sealed class EditorSession
+    public sealed class EditorSession : IDisposable
     {
         public const string KeyColumn = "Key";
         public const string ValueColumn = "Value";
@@ -95,11 +92,20 @@ namespace LocalizationTranslationWPF.Editing
         public void ApplyFilter(string text)
         {
             filterText = text?.Trim() ?? string.Empty;
-            if (table != null)
+            var wasSuppressingChanges = suppressChanges;
+            suppressChanges = true;
+            try
             {
-                var escaped = EditingTable.EscapeFilterValue(filterText);
-                table.DefaultView.RowFilter = filterText.Length == 0 ? string.Empty
-                    : $"[{KeyColumn}] LIKE '%{escaped}%' OR [{ValueColumn}] LIKE '%{escaped}%'";
+                if (table != null)
+                {
+                    var escaped = EditingTable.EscapeFilterValue(filterText);
+                    table.DefaultView.RowFilter = filterText.Length == 0 ? string.Empty
+                        : $"[{KeyColumn}] LIKE '%{escaped}%' OR [{ValueColumn}] LIKE '%{escaped}%'";
+                }
+            }
+            finally
+            {
+                suppressChanges = wasSuppressingChanges;
             }
             Notify();
         }
@@ -121,7 +127,18 @@ namespace LocalizationTranslationWPF.Editing
             table.ColumnChanged -= ColumnChanged;
             table.RowChanged -= RowChanged;
             table.DefaultView.ListChanged -= ViewChanged;
+            table.Dispose();
         }
+
+        public void Dispose()
+        {
+            Detach();
+            table = null;
+            workspace = null;
+            loadedValues = null;
+            GC.SuppressFinalize(this);
+        }
+
         private void ColumnChanged(object sender, DataColumnChangeEventArgs e) => Notify();
         private void RowChanged(object? sender, DataRowChangeEventArgs e) => Notify();
         private void ViewChanged(object? sender, ListChangedEventArgs e) => Notify();

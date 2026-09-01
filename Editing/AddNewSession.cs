@@ -1,23 +1,20 @@
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.Utils;
-using LocalizationTranslationWPF.Projects;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Data;
-using System.Linq;
+using LocalizationTranslationWPF.Projects;
+using LocalizationTranslationWPF.Utils;
 
 namespace LocalizationTranslationWPF.Editing
 {
     /// <summary>
     /// 待新增键值的编辑会话。负责校验、筛选和持久化，不引用 WPF 控件或剪贴板。
     /// </summary>
-    public sealed class AddNewSession
+    public sealed class AddNewSession : IDisposable
     {
         public const string KeyColumn = "Key";
         public const string ValueColumn = "Value";
         public const string ValidationColumn = "ValidationMessage";
 
+        private static readonly string[] LineSeparators = { "\r\n", "\n", "\r" };
         private readonly DataTable table = new() { CaseSensitive = false };
         private string filterText = string.Empty;
         private bool suppressChanges;
@@ -60,7 +57,7 @@ namespace LocalizationTranslationWPF.Editing
         {
             if (string.IsNullOrWhiteSpace(text)) return 0;
             var added = 0;
-            var rows = text.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
+            var rows = text.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries);
             suppressChanges = true;
             try
             {
@@ -142,7 +139,6 @@ namespace LocalizationTranslationWPF.Editing
             }
 
             ValidateRows();
-            RaiseStateChanged();
             ApplyFilter(filterText);
             return true;
         }
@@ -150,16 +146,25 @@ namespace LocalizationTranslationWPF.Editing
         public void ApplyFilter(string text)
         {
             filterText = text?.Trim() ?? string.Empty;
-            if (filterText.Length == 0)
+            var wasSuppressingChanges = suppressChanges;
+            suppressChanges = true;
+            try
             {
-                table.DefaultView.RowFilter = string.Empty;
+                if (filterText.Length == 0)
+                {
+                    table.DefaultView.RowFilter = string.Empty;
+                }
+                else
+                {
+                    var value = EditingTable.EscapeFilterValue(filterText);
+                    table.DefaultView.RowFilter = $"[{KeyColumn}] LIKE '%{value}%' OR [{ValueColumn}] LIKE '%{value}%'";
+                }
             }
-            else
+            finally
             {
-                var value = EditingTable.EscapeFilterValue(filterText);
-                table.DefaultView.RowFilter = $"[{KeyColumn}] LIKE '%{value}%' OR [{ValueColumn}] LIKE '%{value}%'";
+                suppressChanges = wasSuppressingChanges;
             }
-            RaiseStateChanged();
+            if (!wasSuppressingChanges) RaiseStateChanged();
         }
 
         private void ReplaceData(Dictionary<string, string> data)
@@ -177,7 +182,6 @@ namespace LocalizationTranslationWPF.Editing
             }
 
             ValidateRows();
-            RaiseStateChanged();
             ApplyFilter(filterText);
         }
 
@@ -267,5 +271,14 @@ namespace LocalizationTranslationWPF.Editing
             ? string.Empty
             : row[column]?.ToString() ?? string.Empty;
 
+        public void Dispose()
+        {
+            table.ColumnChanged -= TableChanged;
+            table.RowChanged -= TableRowChanged;
+            table.RowDeleted -= TableRowChanged;
+            table.DefaultView.ListChanged -= ViewChanged;
+            table.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }

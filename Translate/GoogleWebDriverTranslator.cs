@@ -1,13 +1,8 @@
-﻿using LocalizationTranslationWPF.Data;
+﻿using System.Text;
+using LocalizationTranslationWPF.Data;
+using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
 using OpenQA.Selenium;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using LocalizationTranslationWPF.DictConverter;
 
 namespace LocalizationTranslationWPF.Translate
 {
@@ -24,19 +19,19 @@ namespace LocalizationTranslationWPF.Translate
         {
         }
 
-        public static async Task<bool> Run(CancellationToken token, bool includeChanged = false)
+        public static async Task<bool> Run(CancellationToken token)
         {
             return await Task.Run(async () =>
             {
                 var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if (dictConverter == null)
                 {
-                    throw new Exception("字典转换器类型错误");
+                    throw new InvalidOperationException("字典转换器类型错误");
                 }
 
                 var driver = await WebDriverProvider.PrepareAsync(ConfigUtils.WebDriver.Value, token);
                 using var translator = new GoogleWebDriverTranslator(driver.Type, driver.DriverPath);
-                return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token, includeChanged);
+                return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token);
             }, token);
         }
 

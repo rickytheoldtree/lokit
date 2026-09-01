@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalizationTranslationWPF"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IDictConverter", "IDictConverter\IDictConverter.csproj", "{4A57034D-175D-429F-8750-5DADC001FE17}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditingRegression", "Tests\EditingRegression\EditingRegression.csproj", "{E64F0873-0A2B-4E40-B20B-2D3434E6D58C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{4A57034D-175D-429F-8750-5DADC001FE17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A57034D-175D-429F-8750-5DADC001FE17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A57034D-175D-429F-8750-5DADC001FE17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E64F0873-0A2B-4E40-B20B-2D3434E6D58C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E64F0873-0A2B-4E40-B20B-2D3434E6D58C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E64F0873-0A2B-4E40-B20B-2D3434E6D58C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E64F0873-0A2B-4E40-B20B-2D3434E6D58C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,5 +1,4 @@
 ﻿using LocalizationTranslationWPF.DictConverter;
-using System.Collections.Generic;
 
 namespace LocalizationTranslationWPF.Utils
 {

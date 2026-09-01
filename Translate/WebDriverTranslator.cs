@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.IO;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.Utils;
 using OpenQA.Selenium;
@@ -13,10 +10,13 @@ namespace LocalizationTranslationWPF.Translate;
 
 public abstract class WebDriverTranslator : IDisposable
 {
-    protected readonly IWebDriver? webDriver;
+    private readonly IWebDriver? webDriver;
     private readonly DriverService? service;
     private bool disposed;
 
+    protected IWebDriver? WebDriver => webDriver;
+
+    /// <param name="type"></param>
     /// <param name="driverPath">驱动的完整路径，由 <see cref="WebDriverProvider"/> 解析得到</param>
     protected WebDriverTranslator(Config.WebDriverType type, string driverPath)
     {
@@ -32,30 +32,30 @@ public abstract class WebDriverTranslator : IDisposable
             switch (type)
             {
                 case Config.WebDriverType.Chrome:
-                {
-                    var chrome = ChromeDriverService.CreateDefaultService(folder, fileName);
-                    chrome.HideCommandPromptWindow = true;
-                    service = chrome;
-                    webDriver = new ChromeDriver(chrome);
-                    break;
-                }
+                    {
+                        var chrome = ChromeDriverService.CreateDefaultService(folder, fileName);
+                        chrome.HideCommandPromptWindow = true;
+                        service = chrome;
+                        webDriver = new ChromeDriver(chrome);
+                        break;
+                    }
                 case Config.WebDriverType.FireFox:
-                {
-                    var firefox = FirefoxDriverService.CreateDefaultService(folder, fileName);
-                    firefox.HideCommandPromptWindow = true;
-                    service = firefox;
-                    webDriver = new FirefoxDriver(firefox);
-                    break;
-                }
+                    {
+                        var firefox = FirefoxDriverService.CreateDefaultService(folder, fileName);
+                        firefox.HideCommandPromptWindow = true;
+                        service = firefox;
+                        webDriver = new FirefoxDriver(firefox);
+                        break;
+                    }
                 case Config.WebDriverType.Edge:
                 default:
-                {
-                    var edge = EdgeDriverService.CreateDefaultService(folder, fileName);
-                    edge.HideCommandPromptWindow = true;
-                    service = edge;
-                    webDriver = new EdgeDriver(edge);
-                    break;
-                }
+                    {
+                        var edge = EdgeDriverService.CreateDefaultService(folder, fileName);
+                        edge.HideCommandPromptWindow = true;
+                        service = edge;
+                        webDriver = new EdgeDriver(edge);
+                        break;
+                    }
             }
         }
         catch
@@ -117,7 +117,7 @@ public abstract class WebDriverTranslator : IDisposable
     /// </summary>
     protected static Task RandomDelay(Random random, CancellationToken token)
     {
-        var randomDelay = random.Next(3000, 8000);
+        var randomDelay = random.Next(1000, 4000);
         LogUtils.Log($"随机延迟: {randomDelay}ms");
         return Task.Delay(randomDelay, token);
     }
@@ -128,5 +128,6 @@ public abstract class WebDriverTranslator : IDisposable
         disposed = true;
         webDriver?.Quit();
         service?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

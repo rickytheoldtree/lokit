@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using LocalizationTranslationWPF.Data;
+﻿using LocalizationTranslationWPF.Data;
 
 namespace LocalizationTranslationWPF.Projects
 {
@@ -24,7 +21,6 @@ namespace LocalizationTranslationWPF.Projects
         public Dictionary<string, string> Working { get; set; } = new(StringComparer.Ordinal);
         public Dictionary<string, string> Baseline { get; set; } = new(StringComparer.Ordinal);
         public string? BaselineHash { get; set; }
-        public Dictionary<string, string> TranslatedSource { get; set; } = new(StringComparer.Ordinal);
         public HashSet<string> RetranslateKeys { get; set; } = new(StringComparer.Ordinal);
     }
 

@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
+﻿using System.Globalization;
 using System.IO;
-using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.Projects;
 using LocalizationTranslationWPF.Utils;
@@ -14,12 +11,15 @@ namespace LocalizationTranslationWPF.Translate
     /// <summary>Owns source snapshots and persistence; providers never access language files.</summary>
     public static class TranslationJob
     {
+        private static readonly CompositeFormat DefaultPromptFormat =
+            CompositeFormat.Parse(ConfigUtils.DefaultAIPrompt);
+
         public delegate Task<Dictionary<string, string>?> TranslateFile(Pair from, Pair to,
             Dictionary<string, string> source, IDictConverter.IDictConverter converter, CancellationToken token);
         public delegate Task<string> RequestTranslation(string sourceText, Pair to, CancellationToken token);
 
         public static async Task<bool> RunAsync(IDictConverter.IDictConverter converter, TranslateFile translate,
-            Func<Task>? delayBetween, CancellationToken token, bool includeChanged = false)
+            Func<Task>? delayBetween, CancellationToken token)
         {
             var workspace = ProjectContext.Current ?? throw new InvalidOperationException("请先创建或打开项目。");
             var sourceLanguage = workspace.SourceLanguage;
@@ -37,7 +37,7 @@ namespace LocalizationTranslationWPF.Translate
                 try
                 {
                     if (target.Name == sourceLanguage.Name) continue;
-                    var input = workspace.PrepareTranslation(target.Name, snapshot, includeChanged);
+                    var input = workspace.PrepareTranslation(target.Name, snapshot);
                     if (input.Source.Count == 0)
                     {
                         LogUtils.Log($"{target.Name} 没有待翻译条目，已保留现有译文。");
@@ -173,11 +173,11 @@ namespace LocalizationTranslationWPF.Translate
                 LogUtils.LogError("Prompt无效（需要包含待翻译内容占位符{1}），本次使用默认Prompt");
                 prompt = ConfigUtils.DefaultAIPrompt;
             }
-            try { return string.Format(prompt, to.Name, text); }
+            try { return string.Format(CultureInfo.InvariantCulture, prompt, to.Name, text); }
             catch (FormatException)
             {
                 LogUtils.LogError("Prompt格式有误（请检查花括号），本次使用默认Prompt");
-                return string.Format(ConfigUtils.DefaultAIPrompt, to.Name, text);
+                return string.Format(CultureInfo.InvariantCulture, DefaultPromptFormat, to.Name, text);
             }
         }
     }

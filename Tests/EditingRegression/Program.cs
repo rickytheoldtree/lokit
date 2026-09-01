@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -35,7 +35,7 @@ internal static class Program
         Run("Add, duplicate validation, sorted insert, search and undo", AddAndValidation);
         Run("Editor save, dirty cancellation, reload and stale snapshot protection", Editor);
         Run("Save drafts feeds translation directly without intermediate files", TranslationPipeline);
-        Run("Existing translations are preserved; changed source requires opt-in", TranslationSelection);
+        Run("Existing translations are preserved until explicitly marked for retranslation", TranslationSelection);
         Run("Invalid keys/placeholders or obsolete results cannot be applied", InvalidTranslation);
         Run("Cancellation does not apply in-flight results", Cancellation);
         Run("Publish preview, diff, byte-exact backup and restore", PublishRestore);
@@ -111,7 +111,7 @@ internal static class Program
     private static void AddAndValidation()
     {
         var project = CreateProject();
-        var session = new AddNewSession();
+        using var session = new AddNewSession();
         session.AppendTabSeparatedText("same\tOne\nsame\tTwo\n \tMissing\nbase\tExists");
         Equal(4, session.ValidationErrorCount);
         session.View[1][0] = "different";
@@ -216,24 +216,22 @@ internal static class Program
         var before = project.ReadLanguage("English");
         project.SaveLanguage("English", new() { ["base"] = "Updated {0}" }, before);
         var source = project.ReadLanguage("English");
-        Equal(0, project.PrepareTranslation("ChineseSimplified", source, false).Source.Count);
-        Equal(1, project.PrepareTranslation("ChineseSimplified", source, true).Source.Count);
-        var editor = new EditorSession(); editor.Load(Pairs[1]);
-        editor.View![0][1] = "人工修订 {0}"; editor.Save();
-        Equal(0, project.PrepareTranslation("ChineseSimplified", source, true).Source.Count);
+        Equal(0, project.PrepareTranslation("ChineseSimplified", source).Source.Count);
+        project.SetRetranslation(new[] { "base" }, new[] { "ChineseSimplified" }, true);
+        Equal(1, project.PrepareTranslation("ChineseSimplified", source).Source.Count);
     }
 
     private static void InvalidTranslation()
     {
         var project = CreateProject();
-        var input = project.PrepareTranslation("French", project.ReadLanguage("English"), false);
+        var input = project.PrepareTranslation("French", project.ReadLanguage("English"));
         Throws<InvalidDataException>(() => project.ApplyTranslation(input, new() { ["wrong"] = "Texte" }));
         Throws<InvalidDataException>(() => project.ApplyTranslation(input, new() { ["base"] = "Sans marqueur" }));
         Equal(0, project.ReadLanguage("French").Count);
         var expected = project.ReadLanguage("English");
         project.SaveLanguage("English", new() { ["base"] = "New {0}" }, expected);
         Throws<InvalidOperationException>(() => project.ApplyTranslation(input, new() { ["base"] = "Ancien {0}" }));
-        input = project.PrepareTranslation("French", project.ReadLanguage("English"), false);
+        input = project.PrepareTranslation("French", project.ReadLanguage("English"));
         project.SaveLanguage("French", new() { ["base"] = "Manuel {0}" }, project.ReadLanguage("French"));
         Throws<InvalidOperationException>(() => project.ApplyTranslation(input, new() { ["base"] = "Auto {0}" }));
         Equal("Manuel {0}", project.ReadLanguage("French")["base"]);
@@ -360,7 +358,7 @@ internal static class Program
         project = ProjectWorkspace.Open(project.FilePath);
         ProjectContext.Current = project;
         Equal(2, project.PendingRetranslationCount);
-        var chineseInput = project.PrepareTranslation("ChineseSimplified", project.ReadLanguage("English"), false);
+        var chineseInput = project.PrepareTranslation("ChineseSimplified", project.ReadLanguage("English"));
         True(chineseInput.Source.Keys.ToHashSet().SetEquals(new[] { "base", "new" }));
         Throws<InvalidDataException>(() => project.ApplyTranslation(chineseInput, new() { ["base"] = "错误 {0}" }));
         Equal("你好 {0}", project.ReadLanguage("ChineseSimplified")["base"]);
@@ -376,7 +374,8 @@ internal static class Program
             True(source.Keys.ToHashSet().SetEquals(new[] { "base", "new" }));
             return Task.FromResult<Dictionary<string, string>?>(new()
             {
-                ["base"] = "重译 {0}", ["new"] = "新增 {1}",
+                ["base"] = "重译 {0}",
+                ["new"] = "新增 {1}",
             });
         }, null, CancellationToken.None).GetAwaiter().GetResult());
         Equal(1, chineseCalls);
@@ -385,7 +384,7 @@ internal static class Program
 
         project.SetRetranslation(new[] { "base" }, new[] { "French" }, false);
         Equal(0, project.PendingRetranslationCount);
-        True(project.PrepareTranslation("French", project.ReadLanguage("English"), false).Source.Keys
+        True(project.PrepareTranslation("French", project.ReadLanguage("English")).Source.Keys
             .ToHashSet().SetEquals(new[] { "new" }));
         project.SetRetranslation(new[] { "base" }, new[] { "French" }, true);
         ConfigUtils.TargetLangAmount.Value = Config.TargetLangAmount.All;
@@ -397,7 +396,8 @@ internal static class Program
             True(source.Keys.ToHashSet().SetEquals(new[] { "base", "new" }));
             return Task.FromResult<Dictionary<string, string>?>(new()
             {
-                ["base"] = "Corrigé {0}", ["new"] = "Nouveau {1}",
+                ["base"] = "Corrigé {0}",
+                ["new"] = "Nouveau {1}",
             });
         }, null, CancellationToken.None).GetAwaiter().GetResult());
         Equal(1, frenchCalls);
@@ -409,13 +409,19 @@ internal static class Program
     private static void BulkPaste()
     {
         CreateProject();
-        var session = new AddNewSession();
+        using var session = new AddNewSession();
         var events = 0;
         session.StateChanged += () => events++;
         Equal(3000, session.AppendTabSeparatedText(string.Join('\n', Enumerable.Range(0, 3000).Select(i => $"key-{i}\tText"))));
         True(events <= 2);
         session.AppendTabSeparatedText("tabs\tText\twith tab");
         Equal("Text\twith tab", (string)session.View[3000][1]);
+        events = 0;
+        session.ApplyFilter("key-1");
+        Equal(1, events);
+        events = 0;
+        session.Reset();
+        Equal(1, events);
     }
 
     private static void WpfSmoke()
@@ -459,6 +465,41 @@ internal static class Program
             True(addNewEmptyDescriptionBrush.Color.R + addNewEmptyDescriptionBrush.Color.G + addNewEmptyDescriptionBrush.Color.B > 300,
                 $"Dark startup add-new empty description foreground was {addNewEmptyDescriptionBrush.Color}.");
             Capture(window, "add-new-dark-startup.png");
+            Invoke(window, "SetProject", project); Pump();
+            Click(window, "BtnAddNewRow"); Pump();
+            var darkAddGrid = Control<DataGrid>(window, "DataGridAddNew");
+            var darkAddRow = darkAddGrid.CurrentItem;
+            darkAddGrid.CurrentCell = new DataGridCellInfo(darkAddRow, darkAddGrid.Columns[0]);
+            True(darkAddGrid.BeginEdit()); Pump();
+            var darkKeyEditor = (TextBox)darkAddGrid.Columns[0].GetCellContent(darkAddRow);
+            var darkKeyEditorForeground = (SolidColorBrush)darkKeyEditor.Foreground;
+            True(darkKeyEditorForeground.Color.R + darkKeyEditorForeground.Color.G + darkKeyEditorForeground.Color.B > 300,
+                $"Dark add-new key editor foreground was {darkKeyEditorForeground.Color}.");
+            Equal(byte.MaxValue, ((SolidColorBrush)darkKeyEditor.Background).Color.A);
+            darkKeyEditor.Text = "theme-key";
+            True(darkAddGrid.CommitEdit(DataGridEditingUnit.Cell, true)); Pump();
+            darkAddGrid.CurrentCell = new DataGridCellInfo(darkAddRow, darkAddGrid.Columns[1]);
+            True(darkAddGrid.BeginEdit()); Pump();
+            var darkValueEditor = (TextBox)darkAddGrid.Columns[1].GetCellContent(darkAddRow);
+            var darkValueEditorForeground = (SolidColorBrush)darkValueEditor.Foreground;
+            True(darkValueEditorForeground.Color.R + darkValueEditorForeground.Color.G + darkValueEditorForeground.Color.B > 300,
+                $"Dark add-new value editor foreground was {darkValueEditorForeground.Color}.");
+            Equal(byte.MaxValue, ((SolidColorBrush)darkValueEditor.Background).Color.A);
+            var darkKeyDisplay = (TextBlock)darkAddGrid.Columns[0].GetCellContent(darkAddRow);
+            var darkKeyDisplayForeground = (SolidColorBrush)darkKeyDisplay.Foreground;
+            True(darkKeyDisplayForeground.Color.R + darkKeyDisplayForeground.Color.G + darkKeyDisplayForeground.Color.B > 300,
+                $"Dark add-new key display foreground was {darkKeyDisplayForeground.Color}.");
+            var darkVisualRow = (DataGridRow)darkAddGrid.ItemContainerGenerator.ContainerFromItem(darkAddRow);
+            var darkSelectedCell = Descendants(darkVisualRow).OfType<DataGridCell>()
+                .Single(cell => cell.Column.DisplayIndex == 0);
+            var darkSelectedCellBackground = ((SolidColorBrush)darkSelectedCell.Background).Color;
+            True(darkSelectedCellBackground.A < 128 ||
+                 darkSelectedCellBackground.R + darkSelectedCellBackground.G + darkSelectedCellBackground.B < 450,
+                $"Dark selected DataGrid cell background was {darkSelectedCellBackground}.");
+            Capture(window, "add-new-key-value-edit-dark-startup.png");
+            darkAddGrid.CancelEdit(DataGridEditingUnit.Cell);
+            darkAddGrid.CancelEdit(DataGridEditingUnit.Row);
+            Invoke(window, "SetProject", null); Pump();
             True(navigation.Navigate(typeof(TranslationPage))); PumpDelay(300);
             Equal(new Thickness(0), Control<Wpf.Ui.Controls.Button>(window, "BtnCopyLog").BorderThickness);
             Equal(new Thickness(0), Control<Wpf.Ui.Controls.Button>(window, "BtnClearLog").BorderThickness);

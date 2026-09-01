@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-
-namespace LocalizationTranslationWPF.Utils
+﻿namespace LocalizationTranslationWPF.Utils
 {
     public static class ThreadUtils
     {

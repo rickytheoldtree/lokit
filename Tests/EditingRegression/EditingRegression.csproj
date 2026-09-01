@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RollForward>Major</RollForward>
+    <!-- Inline arrays keep each regression scenario self-contained and are never hot-path allocations. -->
+    <NoWarn>$(NoWarn);CA1861</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LocalizationTranslationWPF.csproj" />

@@ -1,11 +1,9 @@
-﻿using LocalizationTranslationWPF.Common;
+﻿using System.IO;
+using LocalizationTranslationWPF.Common;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Projects;
 using Newtonsoft.Json;
-using System;
-using System.IO;
-using System.Threading;
 using static LocalizationTranslationWPF.Data.Config;
 
 namespace LocalizationTranslationWPF.Utils
@@ -17,7 +15,7 @@ namespace LocalizationTranslationWPF.Utils
                                               "只输出与输入相同格式的翻译结果，不要解释、前言或 Markdown 代码块；在完整结果末尾追加[end]。" +
                                               "目标语言：{0}；输入数据：{1}";
 
-        public static Config Config => config ??= Load();
+        private static Config Config => config ??= Load();
         private static Config? config;
         private static readonly object SaveSyncRoot = new();
         private static Timer? saveTimer;
@@ -53,8 +51,6 @@ namespace LocalizationTranslationWPF.Utils
         public static BindableProperty<string> DriverProxy { get; } = new();
         public static BindableProperty<string> LastProject { get; } = new();
 
-        public static Pair SourceLang { get; private set; }
-
         public static Pair TargetLang { get; private set; }
 
         #endregion
@@ -78,7 +74,7 @@ namespace LocalizationTranslationWPF.Utils
 
             //源/目标语言只在本次运行内有效，不写入配置
             SourceLangIndex.SetWithoutInvoke(0);
-            SourceLangIndex.Register(index => SourceLang = GetPair(index));
+            SourceLangIndex.Register(index => GetPair(index));
 
             TargetLangIndex.SetWithoutInvoke(0);
             TargetLangIndex.Register(index => TargetLang = GetPair(index));

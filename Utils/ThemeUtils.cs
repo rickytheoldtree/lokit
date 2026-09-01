@@ -1,6 +1,5 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Interop;
-using LocalizationTranslationWPF.Data;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using static LocalizationTranslationWPF.Data.Config;

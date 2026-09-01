@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using LocalizationTranslationWPF.Data;
+﻿using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
 using OpenQA.Selenium;
@@ -89,14 +85,14 @@ namespace LocalizationTranslationWPF.Translate
             this.deepThinking = deepThinking;
         }
 
-        public static async Task<bool> Run(CancellationToken token, bool deepThinking, bool includeChanged = false)
+        public static async Task<bool> Run(bool deepThinking, CancellationToken token)
         {
             return await Task.Run(async () =>
             {
                 var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if (dictConverter == null)
                 {
-                    throw new Exception("字典转换器类型错误");
+                    throw new InvalidOperationException("字典转换器类型错误");
                 }
 
                 var driver = await WebDriverProvider.PrepareAsync(ConfigUtils.WebDriver.Value, token);
@@ -111,7 +107,7 @@ namespace LocalizationTranslationWPF.Translate
 
                 var random = new Random();
                 return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync,
-                    () => RandomDelay(random, token), token, includeChanged);
+                    () => RandomDelay(random, token), token);
             }, token);
         }
 
@@ -215,7 +211,7 @@ namespace LocalizationTranslationWPF.Translate
                 try
                 {
                     currentTextArea.Click();
-                    var js = (IJavaScriptExecutor)webDriver!;
+                    var js = (IJavaScriptExecutor)WebDriver!;
                     var written = js.ExecuteScript(SetTextAreaValueScript, currentTextArea, contentText)?.ToString();
                     if (written == contentText &&
                         await WaitUntilInputAccepted(currentTextArea, contentText, 30, token))
@@ -293,7 +289,7 @@ namespace LocalizationTranslationWPF.Translate
                     var currentTextArea = FindVisibleElement(ComposerBy);
                     var inputCleared = currentTextArea != null &&
                                        string.IsNullOrEmpty(currentTextArea.GetDomProperty("value"));
-                    var enteredConversation = webDriver?.Url.Contains("/a/chat/s/",
+                    var enteredConversation = WebDriver?.Url.Contains("/a/chat/s/",
                         StringComparison.OrdinalIgnoreCase) == true;
                     var hasAssistantMessage = FindLatestAssistantMessage() != null;
                     if (inputCleared && (enteredConversation || hasAssistantMessage))
@@ -331,7 +327,7 @@ namespace LocalizationTranslationWPF.Translate
                         }
                     }
 
-                    if (webDriver?.Url.Contains("sign_in", StringComparison.OrdinalIgnoreCase) == true)
+                    if (WebDriver?.Url.Contains("sign_in", StringComparison.OrdinalIgnoreCase) == true)
                     {
                         LogUtils.LogError("DeepSeek登录状态已失效");
                         return "";
@@ -379,14 +375,14 @@ namespace LocalizationTranslationWPF.Translate
             return elements.Count == 0 ? null : elements[0];
         }
 
-        private System.Collections.Generic.List<IWebElement> FindVisibleElements(By by)
+        private List<IWebElement> FindVisibleElements(By by)
         {
-            var result = new System.Collections.Generic.List<IWebElement>();
-            if (webDriver == null) return result;
+            var result = new List<IWebElement>();
+            if (WebDriver == null) return result;
 
             try
             {
-                foreach (var element in webDriver.FindElements(by))
+                foreach (var element in WebDriver.FindElements(by))
                 {
                     try
                     {

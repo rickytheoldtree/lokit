@@ -104,10 +104,8 @@
 
                         <ui:Card x:Name="TranslationUtilitiesCard" Margin="0,16,0,0" Padding="24">
                             <StackPanel>
-                                <CheckBox x:Name="IncludeChangedSourceCheckBox" Content="同时更新源文案已修改的条目"
-                                          ToolTip="默认仅翻译缺失或空译文。勾选后，也会更新源文案发生变化的旧译文。" />
-                                <TextBlock Text="新增/缺失条目与手动标记的待重译条目会在同一次任务中处理。其他已有译文默认保留。"
-                                           Style="{StaticResource FieldHintStyle}" Margin="0,8,0,14" />
+                                <TextBlock Text="自动翻译只处理新增、缺失、空译文以及手动标记的待重译条目；其他已有译文始终保留。"
+                                           Style="{StaticResource FieldHintStyle}" Margin="0,0,0,14" />
                                 <StackPanel>
                                     <TextBlock Text="正式语言目录 · 仅发布时写入" FontWeight="SemiBold" />
                                     <TextBlock x:Name="ProjectLocationTextBlock" TextWrapping="Wrap" Opacity="0.62" Margin="0,5,0,0" />

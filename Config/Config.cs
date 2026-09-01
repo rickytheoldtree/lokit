@@ -1,6 +1,7 @@
-﻿using System;
-using LocalizationTranslationWPF.DictConverter;
+﻿using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
+
+#pragma warning disable CA1051, CA1708, CA1720 // Names and fields are persisted in existing config.json files.
 
 namespace LocalizationTranslationWPF.Data
 {
@@ -57,3 +58,5 @@ namespace LocalizationTranslationWPF.Data
         }
     }
 }
+
+#pragma warning restore CA1051, CA1708, CA1720

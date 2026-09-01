@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LocalizationTranslationWPF.Common
+﻿namespace LocalizationTranslationWPF.Common
 {
     public class BindableProperty<T>
     {

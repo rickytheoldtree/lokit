@@ -1,10 +1,7 @@
-﻿using DictConverter;
-using LocalizationTranslationWPF.Utils;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Reflection;
+using DictConverter;
+using LocalizationTranslationWPF.Utils;
 
 namespace LocalizationTranslationWPF.DictConverter
 {

@@ -1,8 +1,5 @@
-﻿using System;
+﻿using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using LocalizationTranslationWPF.Utils;
 using Microsoft.Win32;
 using OpenQA.Selenium;
@@ -128,8 +125,9 @@ namespace LocalizationTranslationWPF.Translate
                 return new Resolved(browser.Type, local);
             }
 
-            throw new Exception($"无法获取{browser.Display}驱动。请检查网络连接，或在设置页填写驱动代理后重试；" +
-                                $"也可以手动把 {browser.DriverExe} 放进 {PathUtils.DriverPath}");
+            throw new InvalidOperationException(
+                $"无法获取{browser.Display}驱动。请检查网络连接，或在设置页填写驱动代理后重试；" +
+                $"也可以手动把 {browser.DriverExe} 放进 {PathUtils.DriverPath}");
         }
 
         private static BrowserInfo Pick(WebDriverType requested)
@@ -150,7 +148,7 @@ namespace LocalizationTranslationWPF.Translate
                 return browser;
             }
 
-            throw new Exception("未检测到 Edge / Chrome / Firefox，请先安装其中任意一个浏览器");
+            throw new InvalidOperationException("未检测到 Edge / Chrome / Firefox，请先安装其中任意一个浏览器");
         }
 
         /// <summary>
@@ -166,7 +164,8 @@ namespace LocalizationTranslationWPF.Translate
             //版本信息缓存一天，避免每小时都联网查一次
             Environment.SetEnvironmentVariable("SE_TTL", "86400");
             //限制单次网络请求耗时，失败要快，别让使用者盯着一行日志干等
-            Environment.SetEnvironmentVariable("SE_TIMEOUT", NetworkTimeoutSeconds.ToString());
+            Environment.SetEnvironmentVariable("SE_TIMEOUT",
+                NetworkTimeoutSeconds.ToString(CultureInfo.InvariantCulture));
 
             var proxy = ConfigUtils.DriverProxy.Value;
             Environment.SetEnvironmentVariable("SE_PROXY", string.IsNullOrWhiteSpace(proxy) ? null : proxy.Trim());

@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using LocalizationTranslationWPF.Navigation;
 using LocalizationTranslationWPF.Utils;
@@ -81,7 +78,7 @@ namespace LocalizationTranslationWPF
                 allowNavigation = false;
                 isNavigationPromptActive = false;
             }
-        }                                                                                                                                                                                           
+        }
 
         private void NavigationSelectionChanged(NavigationView sender, RoutedEventArgs e)
         {

@@ -1,7 +1,7 @@
-﻿using System;
-
-namespace LocalizationTranslationWPF.DictConverter
+﻿namespace LocalizationTranslationWPF.DictConverter
 {
+#pragma warning disable CA1051 // The public field is part of the persisted converter descriptor.
+
     [Serializable]
     public struct DictConverterType
     {
@@ -29,4 +29,6 @@ namespace LocalizationTranslationWPF.DictConverter
             }
         }
     }
+
+#pragma warning restore CA1051
 }

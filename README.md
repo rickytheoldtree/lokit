@@ -18,7 +18,7 @@
 
 - 「保存 / 加入项目」只更新 `.locproj`，不会直接修改游戏文件。项目里已保存但未发布的更改，关闭程序后仍保留；尚未保存的表格编辑会询问如何处理。
 - 源语言、语言映射和转换器随项目保存。项目打开期间不能在设置页切换这些配置；新建项目时可以重新选择。
-- 自动翻译默认只处理缺少译文或译文为空的条目，保留已有译文。勾选「同时更新源文案已修改的条目」后，才重新翻译源文案发生变化的条目。
+- 自动翻译只处理新增、缺少译文、译文为空或手动标记为待重译的条目，其他已有译文始终保留。
 - 产品发现旧词条有问题时，可在编辑页选中 Key 并「标记重译」，选择一种或全部目标语言。新增/缺失 Key 与手动标记的旧 Key 可以在同一次翻译中处理；旧译文会一直保留到对应语言的新结果通过完整校验并成功应用。失败或取消时标记不丢失，也可以用同一入口取消标记。
 - 翻译结果会校验 Key 集合、空译文及常见占位符 / 标签（如 `{0}`、`%s`、`<b>`）。源文或译文在请求期间发生变化时，不应用过期结果。仍建议发布前人工检查译文。
 - 编辑页「删除选中 Key」会从项目的所有语言中删除该 Key，发布时才影响正式文件。「撤销更改」只恢复当前表格到最近一次保存 / 加载状态，不撤销已经保存的项目操作。
@@ -50,9 +50,15 @@
 ## 构建与测试
 
 ```powershell
-dotnet build LocalizationTranslationWPF.csproj -c Release
-dotnet run --project Tests/EditingRegression/EditingRegression.csproj -c Release -- --ui
-dotnet publish LocalizationTranslationWPF.csproj -c Release -r win-x64 --self-contained false -o release/win-x64
+powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
+```
+
+该入口会依次检查代码格式、以“警告视为错误”构建整个解决方案，并运行数据与 WPF 界面回归；只需在无桌面的环境验证数据逻辑时可追加 `-SkipUi`。
+
+发布命令：
+
+```powershell
+dotnet publish LocalizationTranslationWPF.csproj -c Release -r win-x64 --self-contained false -o release/project-workflow-win-x64
 ```
 
 回归范围与隔离规则见 [测试说明](Tests/EditingRegression/README.md)。

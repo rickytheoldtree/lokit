@@ -127,9 +127,43 @@
         <Setter Property="RevealButtonEnabled" Value="True" />
     </Style>
 
+    <Style x:Key="LocalizationDataGridCellStyle"
+           TargetType="DataGridCell"
+           BasedOn="{StaticResource {x:Type DataGridCell}}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsEditing" Value="True">
+                <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="LocalizationDataGridRowStyle"
+           TargetType="DataGridRow"
+           BasedOn="{StaticResource {x:Type DataGridRow}}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}" />
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="LocalizationDataGridStyle"
            TargetType="{x:Type ui:DataGrid}"
            BasedOn="{StaticResource {x:Type ui:DataGrid}}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}" />
+        <Setter Property="RowBackground" Value="{DynamicResource ApplicationBackgroundBrush}" />
+        <Setter Property="CellStyle" Value="{StaticResource LocalizationDataGridCellStyle}" />
+        <Setter Property="RowStyle" Value="{StaticResource LocalizationDataGridRowStyle}" />
         <Setter Property="RowHeight" Value="40" />
         <Setter Property="ColumnHeaderHeight" Value="40" />
         <Setter Property="HeadersVisibility" Value="All" />
@@ -145,8 +179,32 @@
         <Setter Property="SelectionMode" Value="Extended" />
     </Style>
 
+    <!-- DataGridColumn is not in the visual tree, so its generated display/edit
+         elements cannot reliably inherit the page foreground on a cold start. -->
+    <Style x:Key="LocalizationDataGridTextStyle"
+           TargetType="TextBlock"
+           BasedOn="{StaticResource {x:Type TextBlock}}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="10,0" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="LocalizationDataGridEditingTextBoxStyle"
+           TargetType="TextBox"
+           BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="9,4" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+    </Style>
+
     <Style x:Key="ValidatedDataGridRowStyle" TargetType="DataGridRow"
-           BasedOn="{StaticResource {x:Type DataGridRow}}">
+           BasedOn="{StaticResource LocalizationDataGridRowStyle}">
         <Setter Property="BorderBrush" Value="#E05252" />
         <Setter Property="BorderThickness" Value="3,0,0,1" />
         <Setter Property="ToolTip" Value="{Binding ValidationMessage}" />

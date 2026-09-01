@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace IDictConverter
+﻿namespace IDictConverter
 {
     public interface IDictConverter
     {

@@ -1,9 +1,8 @@
-using LocalizationTranslationWPF.DictConverter;
-using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using LocalizationTranslationWPF.Utils;
+using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Projects;
+using LocalizationTranslationWPF.Utils;
 using static LocalizationTranslationWPF.Data.Config;
 
 namespace LocalizationTranslationWPF

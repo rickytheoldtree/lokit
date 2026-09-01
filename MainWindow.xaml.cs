@@ -1,11 +1,5 @@
-﻿using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Translate;
-using LocalizationTranslationWPF.Editing;
-using LocalizationTranslationWPF.Projects;
-using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Data;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -14,11 +8,13 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using LocalizationTranslationWPF.Data;
-using System.Threading;
-using System.Threading.Tasks;
+using LocalizationTranslationWPF.DictConverter;
+using LocalizationTranslationWPF.Editing;
+using LocalizationTranslationWPF.Projects;
+using LocalizationTranslationWPF.Translate;
 using LocalizationTranslationWPF.Utils;
-using static LocalizationTranslationWPF.Data.Config;
 using Wpf.Ui.Controls;
+using static LocalizationTranslationWPF.Data.Config;
 
 namespace LocalizationTranslationWPF
 {
@@ -121,6 +117,8 @@ namespace LocalizationTranslationWPF
             LogUtils.EntryAdded -= OnLogEntryAdded;
             editorSession.StateChanged -= UpdateEditingStateUi;
             addNewSession.StateChanged -= UpdateEditingStateUi;
+            editorSession.Dispose();
+            addNewSession.Dispose();
             if (observedProject != null) observedProject.Changed -= ProjectChanged;
         }
 
@@ -248,15 +246,14 @@ namespace LocalizationTranslationWPF
             }
         }
 
-        private Task<bool> StartTranslate(CancellationToken token)
+        private static Task<bool> StartTranslate(CancellationToken token)
         {
-            var includeChanged = IncludeChangedSourceCheckBox.IsChecked == true;
             return ConfigUtils.TranslateMethod.Value switch
             {
-                TranslateMethod.GoogleTranslate => GoogleWebDriverTranslator.Run(token, includeChanged),
-                TranslateMethod.DeepSeek => DeepSeekWebDriverTranslator.Run(token, false, includeChanged),
-                TranslateMethod.DeepSeekWithDeepThinking => DeepSeekWebDriverTranslator.Run(token, true, includeChanged),
-                TranslateMethod.AIApi => AIApiTranslator.Run(token, includeChanged),
+                TranslateMethod.GoogleTranslate => GoogleWebDriverTranslator.Run(token),
+                TranslateMethod.DeepSeek => DeepSeekWebDriverTranslator.Run(false, token),
+                TranslateMethod.DeepSeekWithDeepThinking => DeepSeekWebDriverTranslator.Run(true, token),
+                TranslateMethod.AIApi => AIApiTranslator.Run(token),
                 _ => Task.FromResult(false),
             };
         }
@@ -458,7 +455,7 @@ namespace LocalizationTranslationWPF
             var targets = project.Pairs.Where(pair => pair.Name != project.SourceLanguage.Name).ToList();
             var scope = new ComboBox
             {
-                ItemsSource = new[] { "全部目标语言" }.Concat(targets.Select(pair => pair.Name)).ToArray(),
+                ItemsSource = targets.Select(pair => pair.Name).Prepend("全部目标语言").ToArray(),
                 Style = (Style)FindResource("StandardComboBoxStyle"),
             };
             var currentLanguage = ComboBoxEditorTargetLanguage.SelectedItem is Pair currentPair
@@ -813,6 +810,14 @@ namespace LocalizationTranslationWPF
             e.Column.Width = new DataGridLength(width, DataGridLengthUnitType.Star);
             e.Column.MinWidth = e.PropertyName == EditorSession.KeyColumn ? 180 : 240;
             e.Column.CanUserSort = true;
+
+            if (e.Column is DataGridTextColumn textColumn)
+            {
+                // DataGridColumn does not participate in visual-tree inheritance.
+                // Apply theme-aware styles explicitly to both generated elements.
+                textColumn.ElementStyle = (Style)Application.Current.FindResource("LocalizationDataGridTextStyle");
+                textColumn.EditingElementStyle = (Style)Application.Current.FindResource("LocalizationDataGridEditingTextBoxStyle");
+            }
 
             if (e.Column is DataGridBoundColumn { Binding: Binding binding })
             {

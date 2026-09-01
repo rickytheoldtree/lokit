@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -35,14 +30,16 @@ namespace LocalizationTranslationWPF
                 if (folderDialog.ShowDialog(this) != true) return;
                 var rules = new ComboBox
                 {
-                    ItemsSource = PairUtils.PairsCache, DisplayMemberPath = "Key",
+                    ItemsSource = PairUtils.PairsCache,
+                    DisplayMemberPath = "Key",
                     Style = (Style)FindResource("StandardComboBoxStyle"),
                     SelectedIndex = Math.Clamp(ConfigUtils.IsoPairIndex.Value, 0, Math.Max(0, PairUtils.PairsCache.Count - 1)),
                 };
                 var source = new ComboBox { Style = (Style)FindResource("StandardComboBoxStyle") };
                 var format = new ComboBox
                 {
-                    ItemsSource = DictConverterUtils.Converters, DisplayMemberPath = "Name",
+                    ItemsSource = DictConverterUtils.Converters,
+                    DisplayMemberPath = "Name",
                     Style = (Style)FindResource("StandardComboBoxStyle"),
                     SelectedItem = new DictConverterType(ConfigUtils.DictConverter.Value),
                 };
@@ -66,16 +63,21 @@ namespace LocalizationTranslationWPF
                 panel.Children.Add(hint);
                 var dialog = new ContentDialog(RootContentDialogHost)
                 {
-                    Title = "新建本地化项目", Content = panel, PrimaryButtonText = "选择项目保存位置",
-                    CloseButtonText = "取消", DefaultButton = ContentDialogButton.Primary,
+                    Title = "新建本地化项目",
+                    Content = panel,
+                    PrimaryButtonText = "选择项目保存位置",
+                    CloseButtonText = "取消",
+                    DefaultButton = ContentDialogButton.Primary,
                 };
                 if (await dialog.ShowAsync(CancellationToken.None) != ContentDialogResult.Primary) return;
                 if (source.SelectedItem is not Pair sourcePair || format.SelectedItem is not DictConverterType converter)
                     throw new InvalidOperationException("请选择源语言和文件格式。");
                 var save = new SaveFileDialog
                 {
-                    Title = "保存项目工作副本（不需要放在游戏目录）", Filter = "本地化项目 (*.locproj)|*.locproj",
-                    DefaultExt = ".locproj", FileName = new DirectoryInfo(folderDialog.FolderName).Name + ".locproj",
+                    Title = "保存项目工作副本（不需要放在游戏目录）",
+                    Filter = "本地化项目 (*.locproj)|*.locproj",
+                    DefaultExt = ".locproj",
+                    FileName = new DirectoryInfo(folderDialog.FolderName).Name + ".locproj",
                 };
                 if (save.ShowDialog(this) != true) return;
                 SetProject(ProjectWorkspace.Create(save.FileName, folderDialog.FolderName,
@@ -145,7 +147,6 @@ namespace LocalizationTranslationWPF
                     project.Changed += ProjectChanged;
                 }
                 ConfigUtils.LastProject.Value = project?.FilePath ?? string.Empty;
-                IncludeChangedSourceCheckBox.IsChecked = false;
             }
             finally { isSwitchingProject = false; }
             InitializeEditingPage(currentPageIndex);
@@ -237,19 +238,25 @@ namespace LocalizationTranslationWPF
                 panel.Children.Add(new TextBlock
                 {
                     Text = $"目标：{project.TargetDirectory}\n{plan.Files.Count} 个文件 · 新增 {plan.Changes.Count(c => c.Kind == "新增")} · 修改 {plan.Changes.Count(c => c.Kind == "修改")} · 删除 {plan.Changes.Count(c => c.Kind == "删除")}\n发布前会自动备份原文件。",
-                    TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 0, 0, 12),
                 });
                 if (project.PendingRetranslationCount > 0)
                     panel.Children.Add(new TextBlock
                     {
                         Text = $"注意：仍有 {project.PendingRetranslationCount} 项目标译文待重译。发布不会清除这些标记。",
-                        TextWrapping = TextWrapping.Wrap, FontWeight = FontWeights.SemiBold,
+                        TextWrapping = TextWrapping.Wrap,
+                        FontWeight = FontWeights.SemiBold,
                         Margin = new Thickness(0, 0, 0, 12),
                     });
                 var grid = new Wpf.Ui.Controls.DataGrid
                 {
-                    ItemsSource = plan.Changes, IsReadOnly = true, AutoGenerateColumns = false,
-                    Height = 270, CanUserAddRows = false, CanUserDeleteRows = false,
+                    ItemsSource = plan.Changes,
+                    IsReadOnly = true,
+                    AutoGenerateColumns = false,
+                    Height = 270,
+                    CanUserAddRows = false,
+                    CanUserDeleteRows = false,
                     Style = (Style)FindResource("LocalizationDataGridStyle"),
                 };
                 foreach (var column in new[] { ("语言", "Language", 1d), ("类型", "Kind", .6d), ("Key", "Key", 1.2d), ("原内容", "Before", 1.5d), ("新内容", "After", 1.5d) })
@@ -257,8 +264,12 @@ namespace LocalizationTranslationWPF
                 panel.Children.Add(grid);
                 var dialog = new ContentDialog(RootContentDialogHost)
                 {
-                    Title = "发布预览", Content = panel, PrimaryButtonText = "备份并发布", CloseButtonText = "取消",
-                    DefaultButton = ContentDialogButton.Close, DialogMaxWidth = 840,
+                    Title = "发布预览",
+                    Content = panel,
+                    PrimaryButtonText = "备份并发布",
+                    CloseButtonText = "取消",
+                    DefaultButton = ContentDialogButton.Close,
+                    DialogMaxWidth = 840,
                 };
                 if (await dialog.ShowAsync(CancellationToken.None) != ContentDialogResult.Primary) return;
                 var backup = project.Publish(plan);
@@ -278,8 +289,11 @@ namespace LocalizationTranslationWPF
                 if (!project.HasBackup) { ShowInfoBar("没有发布备份", "完成首次发布后才可以恢复。", InfoBarSeverity.Informational); return; }
                 var dialog = new ContentDialog(RootContentDialogHost)
                 {
-                    Title = "恢复上次发布？", Content = $"正式目录：{project.TargetDirectory}\n正式文件将恢复到上次发布前；当前工作副本保留，变为未发布状态。如果正式文件已被外部修改，将阻止恢复。",
-                    PrimaryButtonText = "恢复正式文件", CloseButtonText = "取消", DefaultButton = ContentDialogButton.Close,
+                    Title = "恢复上次发布？",
+                    Content = $"正式目录：{project.TargetDirectory}\n正式文件将恢复到上次发布前；当前工作副本保留，变为未发布状态。如果正式文件已被外部修改，将阻止恢复。",
+                    PrimaryButtonText = "恢复正式文件",
+                    CloseButtonText = "取消",
+                    DefaultButton = ContentDialogButton.Close,
                 };
                 if (await dialog.ShowAsync(CancellationToken.None) != ContentDialogResult.Primary) return;
                 project.RestoreLastPublish();

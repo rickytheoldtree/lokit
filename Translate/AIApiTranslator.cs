@@ -1,21 +1,16 @@
-﻿using System;
-using System.Net.Http;
-using System.Collections.Generic;
+﻿using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 using LocalizationTranslationWPF.Data;
 using LocalizationTranslationWPF.DictConverter;
 using LocalizationTranslationWPF.Utils;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace LocalizationTranslationWPF.Translate
 {
     public class AIApiTranslator : IDisposable
     {
-        private readonly string apiKey;
         private readonly string endpoint;
         private readonly string modelName;
         private readonly string prompt;
@@ -23,34 +18,33 @@ namespace LocalizationTranslationWPF.Translate
 
         private AIApiTranslator(string apiKey, string endpoint, string modelName, string prompt)
         {
-            this.apiKey = apiKey;
             this.endpoint = endpoint;
             this.modelName = modelName;
             this.prompt = prompt;
             try
             {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", this.apiKey);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             }
             catch (FormatException)
             {
-                throw new Exception("API Key格式不正确，请在设置页重新填写");
+                throw new ArgumentException("API Key格式不正确，请在设置页重新填写", nameof(apiKey));
             }
         }
 
-        public static async Task<bool> Run(CancellationToken token, bool includeChanged = false)
+        public static async Task<bool> Run(CancellationToken token)
         {
             return await Task.Run(async () =>
             {
                 var dictConverter = DictConverterUtils.GetConverterInstance(ConfigUtils.DictConverter.Value);
                 if (dictConverter == null)
                 {
-                    throw new Exception("字典转换器类型错误");
+                    throw new InvalidOperationException("字典转换器类型错误");
                 }
 
                 using var translator = new AIApiTranslator(ConfigUtils.ApiKey.Value, ConfigUtils.ApiEndpoint.Value,
                     ConfigUtils.AIModel.Value, ConfigUtils.AIPrompt.Value);
 
-                return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token, includeChanged);
+                return await TranslationJob.RunAsync(dictConverter, translator.TranslateAsync, null, token);
             }, token);
         }
 
@@ -71,10 +65,10 @@ namespace LocalizationTranslationWPF.Translate
                 }
             };
 
-            var httpContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8,
+            using var httpContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8,
                 "application/json");
 
-            var response = await client.PostAsync(endpoint, httpContent, token);
+            using var response = await client.PostAsync(endpoint, httpContent, token);
             var responseContent = await response.Content.ReadAsStringAsync(token);
             if (token.IsCancellationRequested)
             {
@@ -83,7 +77,8 @@ namespace LocalizationTranslationWPF.Translate
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"API request failed: {response.StatusCode}, {responseContent}");
+                throw new HttpRequestException($"API request failed: {response.StatusCode}, {responseContent}",
+                    null, response.StatusCode);
             }
 
             try
@@ -107,6 +102,7 @@ namespace LocalizationTranslationWPF.Translate
         public void Dispose()
         {
             client.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }
