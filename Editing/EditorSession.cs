@@ -62,13 +62,7 @@ namespace LocalizationTranslationWPF.Editing
             if (table == null || workspace == null) throw new InvalidOperationException("没有可保存的项目数据。");
             var values = table.Rows.Cast<DataRow>().ToDictionary(row => Text(row, KeyColumn), row => Text(row, ValueColumn), StringComparer.Ordinal);
             workspace.SaveLanguage(currentPair.Name, values, loadedValues!);
-            loadedValues = values;
-            loadedRevision = workspace.Revision;
-            suppressChanges = true;
-            try { table.AcceptChanges(); }
-            finally { suppressChanges = false; }
-            Notify();
-            return true;
+            return Load(currentPair);
         }
 
         public bool DeleteKeys(IEnumerable<string> keys)

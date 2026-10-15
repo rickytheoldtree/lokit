@@ -17,7 +17,7 @@ using LocalizationTranslationWPF.Projects;
 using LocalizationTranslationWPF.Translate;
 using LocalizationTranslationWPF.Utils;
 
-internal static class Program
+internal static partial class Program
 {
     private static readonly DefaultConverter Converter = new();
     private static readonly Pair[] Pairs = { new("English", "en"), new("ChineseSimplified", "zh-CN"), new("French", "fr") };
@@ -42,7 +42,14 @@ internal static class Program
         Run("External changes and stale/wrong-project previews block publishing", Conflicts);
         Run("Publish state-commit failure rolls back every language file", PublishRollback);
         Run("Restore rejects externally modified published files", RestoreConflict);
-        Run("Multiple instances cannot overwrite newer workspace data", WorkspaceConflict);
+        Run("Multiple instances combine separate edits and protect conflicting values", WorkspaceConflict);
+        Run("Portable collaboration roundtrip, repeat and incremental revisions", CollaborationRoundtrip);
+        Run("JSON import is additive, previews conflicts and marks changed sources", LanguageImport);
+        Run("Source deletion and modified translations require consistent choices", MergeDeletion);
+        Run("Merge choices survive restart and unrelated editing", MergeDraft);
+        Run("Stale previews preserve data and merge history can be undone safely", MergeHistory);
+        Run("External resource sync rebases working changes and checks concurrent writes", ResourceSync);
+        Run("Collaboration rejects mismatched projects and malformed metadata", InvalidCollaboration);
         Run("Project validation rejects traversal/duplicate names and bad source files", InvalidProjects);
         Run("New and explicitly marked old keys translate together with per-language retry state", ForcedRetranslation);
         Run("Bulk paste batches validation and state notifications", BulkPaste);
@@ -154,6 +161,7 @@ internal static class Program
         True(editor.Save());
         Equal("Changed {0}", project.ReadLanguage("English")["base"]);
         Equal("Hello {0}", Read(Target(project, "English"))["base"]);
+        row = editor.View![0];
         row[1] = "Local";
         var remote = project.ReadLanguage("English");
         project.SaveLanguage("English", new() { ["base"] = "Remote" }, remote);
@@ -326,9 +334,14 @@ internal static class Program
         var first = CreateProject();
         var second = ProjectWorkspace.Open(first.FilePath);
         first.AddSourceEntries(new() { ["first"] = "One" });
-        Throws<IOException>(() => second.AddSourceEntries(new() { ["second"] = "Two" }));
-        True(!second.ReadLanguage("English").ContainsKey("second"));
-        True(ProjectWorkspace.Open(first.FilePath).ReadLanguage("English").ContainsKey("first"));
+        second.AddSourceEntries(new() { ["second"] = "Two" });
+        var combined = ProjectWorkspace.Open(first.FilePath).ReadLanguage("English");
+        True(combined.ContainsKey("first") && combined.ContainsKey("second"));
+        var expected = first.ReadLanguage("English");
+        var otherExpected = second.ReadLanguage("English");
+        first.SaveLanguage("English", new(expected) { ["base"] = "First" }, expected);
+        Throws<EditorMergeConflictException>(() => second.SaveLanguage("English", new(otherExpected) { ["base"] = "Second" }, otherExpected));
+        Equal("First", ProjectWorkspace.Open(first.FilePath).ReadLanguage("English")["base"]);
     }
 
     private static void InvalidProjects()
@@ -636,6 +649,7 @@ internal static class Program
             PumpUntil(() => project.PendingChangeCount == 0);
             Equal(0, project.PendingChangeCount);
             True(Read(Target(project, "English")).ContainsKey("fixed"));
+            WpfCollaboration(window, project);
             Invoke(window, "SetProject", null); Pump();
             True(!Control<ButtonBase>(window, "BtnAddNewRow").IsEnabled);
         }

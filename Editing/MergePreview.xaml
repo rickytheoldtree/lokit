@@ -1,0 +1,80 @@
+<UserControl x:Class="LocalizationTranslationWPF.Editing.MergePreview"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LocalizationTranslationWPF.Editing"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Grid MinWidth="640" MaxWidth="940">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition x:Name="ChangesRow" Height="180" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock x:Name="HintText" Margin="0,6,0,0" TextWrapping="Wrap" Opacity="0.68" />
+            <TextBlock x:Name="ErrorText" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#EF4444" Visibility="Collapsed" />
+        </StackPanel>
+        <DockPanel Grid.Row="1" Margin="0,12,0,10">
+            <ui:Button Content="批量选择" DockPanel.Dock="Right" Margin="10,0,0,0" Click="BatchChoicesClick">
+                <ui:Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="当前列表全部保留当前" Click="KeepVisibleClick" />
+                        <MenuItem Header="当前列表全部采用传入" Click="AcceptVisibleClick" />
+                    </ContextMenu>
+                </ui:Button.ContextMenu>
+            </ui:Button>
+            <CheckBox x:Name="ConflictsOnly" Content="只看冲突" DockPanel.Dock="Right" Margin="12,0,0,0"
+                      VerticalAlignment="Center" Click="FilterChanged" />
+            <ui:TextBox x:Name="SearchBox" PlaceholderText="搜索 Key 或文案" TextChanged="SearchChanged" />
+        </DockPanel>
+        <ui:DataGrid x:Name="ChangesGrid" Grid.Row="2" Style="{StaticResource LocalizationDataGridStyle}"
+                     AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                     SelectionMode="Single" SelectionChanged="SelectedEntryChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="语言" Binding="{Binding Language}" Width="100" IsReadOnly="True" />
+                <DataGridTextColumn Header="Key" Binding="{Binding Key}" Width="*" IsReadOnly="True" />
+                <DataGridTextColumn Header="类型" Binding="{Binding Kind}" Width="70" IsReadOnly="True" />
+                <DataGridTemplateColumn Header="处理方式" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{x:Static local:MergePreview.ResolutionChoices}"
+                                      DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding Resolution, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource StandardComboBoxStyle}" Margin="2" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </ui:DataGrid>
+        <Grid x:Name="DetailsPanel" Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" /><ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" /><ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="交接时的内容" Style="{StaticResource FieldLabelStyle}" />
+                <ui:TextBox Text="{Binding BeforeText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                         Height="60" VerticalScrollBarVisibility="Auto" Style="{StaticResource StandardTextBoxStyle}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="当前项目" Style="{StaticResource FieldLabelStyle}" />
+                <ui:TextBox Text="{Binding CurrentText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                         Height="60" VerticalScrollBarVisibility="Auto" Style="{StaticResource StandardTextBoxStyle}" />
+            </StackPanel>
+            <StackPanel Grid.Column="4">
+                <TextBlock Text="传入的修改" Style="{StaticResource FieldLabelStyle}" />
+                <ui:TextBox Text="{Binding IncomingText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                         Height="60" VerticalScrollBarVisibility="Auto" Style="{StaticResource StandardTextBoxStyle}" />
+            </StackPanel>
+        </Grid>
+        <StackPanel Grid.Row="4" Margin="0,10,0,0">
+            <TextBlock Text="手动编辑结果（输入后采用此内容，空文本会保留）" Style="{StaticResource FieldLabelStyle}" />
+            <ui:TextBox x:Name="ResultBox" Text="{Binding Result, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     AcceptsReturn="True" TextWrapping="Wrap" Height="58" VerticalScrollBarVisibility="Auto"
+                     Style="{StaticResource StandardTextBoxStyle}" TextChanged="ResultChanged" />
+        </StackPanel>
+    </Grid>
+</UserControl>

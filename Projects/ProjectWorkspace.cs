@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace LocalizationTranslationWPF.Projects
 {
-    public sealed class ProjectWorkspace
+    public sealed partial class ProjectWorkspace
     {
         private readonly object sync = new();
         private ProjectDocument document;
@@ -32,6 +32,10 @@ namespace LocalizationTranslationWPF.Projects
         public long Revision { get { lock (sync) return revision; } }
         public string BackupDirectory => FilePath + ".backups";
         public bool HasBackup { get { lock (sync) return document.LastBackup != null; } }
+        public bool HasPublishTarget { get { lock (sync) return !string.IsNullOrEmpty(document.TargetDirectory); } }
+        public bool IsCollaborationCopy { get { lock (sync) return document.CollaborationBase != null; } }
+        public bool HasPendingMerge { get { lock (sync) return document.PendingMerge != null; } }
+        public bool HasMergeBackup { get { lock (sync) return document.LastMergeBackup != null; } }
         public IReadOnlyList<Pair> Pairs { get { lock (sync) return document.Languages.Select(l => new Pair(l.Name, l.IsoCode)).ToArray(); } }
         public Pair SourceLanguage { get { lock (sync) { var l = Language(document, document.SourceLanguage); return new Pair(l.Name, l.IsoCode); } } }
         public int PendingChangeCount { get { lock (sync) return document.Languages.Sum(l => Diff(l).Count); } }
@@ -79,7 +83,9 @@ namespace LocalizationTranslationWPF.Projects
             Validate(data);
             var converterType = DictConverterUtils.Converters.Select(c => c.type)
                 .FirstOrDefault(t => t?.FullName == data.ConverterType)
-                ?? throw new InvalidDataException($"缺少转换器 {data.ConverterType}，请先安装对应 DLL。");
+                ?? (data.CollaborationBase != null && string.IsNullOrEmpty(data.TargetDirectory)
+                    ? typeof(global::DictConverter.DefaultConverter)
+                    : throw new InvalidDataException($"缺少转换器 {data.ConverterType}，请先安装对应 DLL。"));
             return new ProjectWorkspace(path, data, converterType, Hash(bytes));
         }
 
@@ -112,8 +118,27 @@ namespace LocalizationTranslationWPF.Projects
             Mutate(next =>
             {
                 var language = Language(next, name);
-                if (!Same(language.Working, expected)) throw new InvalidOperationException("工作数据已变化，请重新加载后编辑。");
-                language.Working = Copy(values);
+                var merged = Copy(language.Working);
+                foreach (var key in expected.Keys.Union(values.Keys, StringComparer.Ordinal))
+                {
+                    expected.TryGetValue(key, out var before);
+                    values.TryGetValue(key, out var desired);
+                    language.Working.TryGetValue(key, out var current);
+                    if (before == desired) continue;
+                    if (current != before && current != desired)
+                    {
+                        EnsureNoPendingMerge();
+                        throw new EditorMergeConflictException(BuildMergePlan(new MergeRequest
+                        {
+                            Title = "合并我的编辑",
+                            Basis = new() { new LanguageSnapshot { Name = name, Values = Copy(expected) } },
+                            Incoming = new() { new LanguageSnapshot { Name = name, Values = Copy(values) } },
+                        }));
+                    }
+                    if (desired == null) merged.Remove(key);
+                    else merged[key] = desired;
+                }
+                language.Working = merged;
             });
         }
 
@@ -200,6 +225,8 @@ namespace LocalizationTranslationWPF.Projects
                 var conflicts = new List<string>();
                 var files = new List<string>();
                 var changes = new List<EntryChange>();
+                if (!HasPublishTarget) conflicts.Add("这是协作副本。编辑保存后，使用“保存并发回”交给项目负责人合并。");
+                if (document.PendingMerge != null) conflicts.Add("还有未完成的合并，请先继续处理或放弃本次合并。");
                 if (CurrentHash(FilePath) != fileHash) conflicts.Add("项目文件已被外部修改，请重新打开项目。");
                 foreach (var language in document.Languages)
                 {
@@ -207,6 +234,7 @@ namespace LocalizationTranslationWPF.Projects
                     changes.AddRange(diff);
                     // Do not create empty files for languages that have never been translated.
                     if (diff.Count == 0) continue;
+                    if (!HasPublishTarget) continue;
                     var path = TargetPath(document, language.Name);
                     files.Add(language.Name);
                     if (CurrentHash(path) != language.BaselineHash)
@@ -222,6 +250,7 @@ namespace LocalizationTranslationWPF.Projects
             lock (sync)
             {
                 using var lease = AcquireProjectLock();
+                using var targetLease = AcquireTargetLock();
                 if (plan.ProjectId != document.Id || plan.StateHash != fileHash || plan.Revision != revision)
                     throw new InvalidOperationException("项目或工作数据已变化，请重新预览发布。");
                 var current = PreviewPublish();
@@ -278,6 +307,7 @@ namespace LocalizationTranslationWPF.Projects
             lock (sync)
             {
                 using var lease = AcquireProjectLock();
+                using var targetLease = AcquireTargetLock();
                 if (document.LastBackup == null) throw new InvalidOperationException("没有可恢复的发布备份。");
                 if (CurrentHash(FilePath) != fileHash) throw new IOException("项目文件已被外部修改，请重新打开。");
                 var backup = JsonConvert.DeserializeObject<PublishBackup>(File.ReadAllText(Path.Combine(BackupDirectory, document.LastBackup)))
@@ -348,6 +378,7 @@ namespace LocalizationTranslationWPF.Projects
             lock (sync)
             {
                 using var lease = AcquireProjectLock();
+                RefreshWorkspaceFromDisk();
                 var next = Clone(document);
                 mutation(next);
                 Commit(next);
@@ -356,6 +387,26 @@ namespace LocalizationTranslationWPF.Projects
         }
 
         private FileStream AcquireProjectLock() => new(FilePath + ".lock", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+
+        private void RefreshWorkspaceFromDisk()
+        {
+            if (CurrentHash(FilePath) == fileHash) return;
+            var latest = Open(FilePath);
+            if (latest.document.Id != document.Id || latest.document.TargetDirectory != document.TargetDirectory ||
+                latest.document.SourceLanguage != document.SourceLanguage || latest.document.ConverterType != document.ConverterType ||
+                !latest.Pairs.SequenceEqual(Pairs))
+                throw new IOException("磁盘上的项目配置已变化，请另存当前编辑内容后重新打开项目。");
+            document = latest.document;
+            fileHash = latest.fileHash;
+            revision++;
+        }
+
+        private FileStream AcquireTargetLock()
+        {
+            if (!HasPublishTarget) throw new InvalidOperationException("协作副本请通过“保存并发回”交回修改。");
+            return new FileStream(Path.Combine(document.TargetDirectory, ".localization-publish.lock"),
+                FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
 
         private void Commit(ProjectDocument next)
         {
@@ -385,7 +436,8 @@ namespace LocalizationTranslationWPF.Projects
         private static void Validate(ProjectDocument data)
         {
             if (data.Version != 1 || string.IsNullOrWhiteSpace(data.Id) || string.IsNullOrWhiteSpace(data.ConverterType) ||
-                data.Languages == null || data.Languages.Count == 0 || !Path.IsPathFullyQualified(data.TargetDirectory))
+                data.Languages == null || data.Languages.Count == 0 ||
+                (string.IsNullOrEmpty(data.TargetDirectory) ? data.CollaborationBase == null : !Path.IsPathFullyQualified(data.TargetDirectory)))
                 throw new InvalidDataException("项目格式或目标目录无效。");
             var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var language in data.Languages)
@@ -407,6 +459,7 @@ namespace LocalizationTranslationWPF.Projects
                 throw new InvalidDataException("待重译标记包含无效的源语言或 Key。");
             if (data.LastBackup != null && (Path.GetFileName(data.LastBackup) != data.LastBackup ||
                 data.LastBackup.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)) throw new InvalidDataException("备份路径无效。");
+            ValidateCollaboration(data);
         }
 
         private static ProjectLanguage Language(ProjectDocument data, string name) => data.Languages.FirstOrDefault(l => l.Name == name)

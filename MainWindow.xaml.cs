@@ -575,6 +575,7 @@ namespace LocalizationTranslationWPF
 
         private void MainWindowPreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (isProjectActionActive || cts != null) return;
             if (e.Key != Key.S || Keyboard.Modifiers != ModifierKeys.Control)
             {
                 return;
@@ -609,6 +610,18 @@ namespace LocalizationTranslationWPF
                 }
 
                 ShowInfoBar("保存失败", "请查看运行日志中的详细原因。", InfoBarSeverity.Error);
+                return false;
+            }
+            catch (EditorMergeConflictException conflict)
+            {
+                try
+                {
+                    var project = ProjectContext.Current!;
+                    project.SaveMergeDraft(conflict.Plan);
+                    ReloadEditorAfterMerge();
+                    ShowInfoBar("编辑已保存为待合并内容", "其他人也修改了部分文案。点击顶部“继续合并”选择要保留的内容，你的编辑已保存在项目中。", InfoBarSeverity.Warning);
+                }
+                catch (Exception error) { ShowInfoBar("保存合并进度失败", error.Message + " 你的编辑仍保留在表格中。", InfoBarSeverity.Error); }
                 return false;
             }
             catch (Exception exception)

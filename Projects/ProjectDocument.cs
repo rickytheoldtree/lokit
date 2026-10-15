@@ -12,6 +12,13 @@ namespace LocalizationTranslationWPF.Projects
         public string SourceLanguage { get; set; } = string.Empty;
         public List<ProjectLanguage> Languages { get; set; } = new();
         public string? LastBackup { get; set; }
+        public string? CollaborationId { get; set; }
+        public List<LanguageSnapshot>? CollaborationBase { get; set; }
+        public Dictionary<string, List<LanguageSnapshot>> ReceivedCollaborations { get; set; } = new(StringComparer.Ordinal);
+        public HashSet<string> ReceivedImports { get; set; } = new(StringComparer.Ordinal);
+        public MergeRequest? PendingMerge { get; set; }
+        public string? LastMergeBackup { get; set; }
+        public string? LastMergeState { get; set; }
     }
 
     public sealed class ProjectLanguage

@@ -14,6 +14,7 @@
                  WindowBackdropType="Mica"
                  Closing="MainWindowClosing"
                  SizeChanged="MainWindowSizeChanged"
+                 AllowDrop="True" PreviewDragOver="ProjectFilesDragOver" PreviewDrop="ProjectFilesDrop"
                  PreviewKeyDown="MainWindowPreviewKeyDown">
     <local:PageStore.Pages>
         <x:Array Type="{x:Type UserControl}">
@@ -22,15 +23,15 @@
                 <Grid Margin="20,20,20,24" MaxWidth="960" HorizontalAlignment="Center">
                     <StackPanel>
                         <TextBlock x:Name="TranslationPageTitleTextBlock" Text="翻译" Style="{StaticResource PageTitleStyle}" />
-                        <TextBlock Text="配置语言与翻译方式，然后开始批量处理本地化文件。"
+                        <TextBlock Text="新增、翻译、接收同事的修改，持续维护同一个项目。"
                                    Style="{StaticResource PageDescriptionStyle}" />
 
                         <ui:Card x:Name="ProjectWelcomeCard" Margin="0,20,0,0" Padding="28">
                             <StackPanel>
                                 <TextBlock Text="从一个项目开始" Style="{StaticResource SectionTitleStyle}" />
-                                <TextBlock Text="选择正式语言目录，建立独立工作副本。新增、翻译和编辑都在这里完成，检查后统一发布。"
+                                <TextBlock Text="收到同事的协作副本？直接拖到窗口打开，就能修改文案和添加词条。"
                                            TextWrapping="Wrap" Margin="0,10,0,0" Opacity="0.68" />
-                                <TextBlock Text="使用内容区顶部的“新建项目”或“打开项目”；无需准备中间目录，也无需来回复制文件。"
+                                <TextBlock Text="首次整理游戏资源可新建项目。之后把修订副本拖回已有项目，即可预览差异并合并，无需重新建项目。"
                                            TextWrapping="Wrap" Margin="0,8,0,0" Opacity="0.68" />
                             </StackPanel>
                         </ui:Card>
@@ -106,10 +107,7 @@
                             <StackPanel>
                                 <TextBlock Text="自动翻译只处理新增、缺失、空译文以及手动标记的待重译条目；其他已有译文始终保留。"
                                            Style="{StaticResource FieldHintStyle}" Margin="0,0,0,14" />
-                                <StackPanel>
-                                    <TextBlock Text="正式语言目录 · 仅发布时写入" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="ProjectLocationTextBlock" TextWrapping="Wrap" Opacity="0.62" Margin="0,5,0,0" />
-                                </StackPanel>
+                                <TextBlock x:Name="ProjectLocationTextBlock" TextWrapping="Wrap" Opacity="0.68" />
                             </StackPanel>
                         </ui:Card>
                     </StackPanel>
@@ -560,19 +558,32 @@
             <ui:NavigationView.Header>
                 <Border x:Name="ProjectToolbar" Margin="20,20,20,0" Padding="12,8"
                         CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}">
+                    <StackPanel>
                     <DockPanel LastChildFill="True">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:Button Content="新建项目" Margin="0,0,8,0" Click="BtnNewProjectClick" />
-                            <ui:Button Content="打开项目" Margin="0,0,8,0" Click="BtnOpenProjectClick" />
-                            <ui:Button x:Name="BtnPublishProject" Content="预览发布" Appearance="Primary"
+                            <ui:Button x:Name="BtnCreateProject" Content="新建项目" Margin="0,0,8,0" Click="BtnNewProjectClick" />
+                            <ui:Button x:Name="BtnOpenProject" Content="打开项目" Margin="0,0,8,0" Click="BtnOpenProjectClick" />
+                            <ui:Button x:Name="BtnReceiveChanges" Content="接收修改" Appearance="Primary" Margin="0,0,8,0" Click="BtnReceiveChangesClick" />
+                            <ui:Button x:Name="BtnShareProject" Content="发给协作者" Margin="0,0,8,0" Click="BtnShareProjectClick" />
+                            <ui:Button x:Name="BtnContinueMerge" Content="继续合并" Margin="0,0,8,0" Click="BtnContinueMergeClick" />
+                            <ui:Button x:Name="BtnPublishProject" Content="导出游戏资源"
                                        Margin="0,0,8,0" Icon="{ui:SymbolIcon FolderArrowRight24}" Click="BtnPublishProjectClick" />
-                            <ui:Button x:Name="BtnProjectActions" Content="项目操作" Click="BtnProjectActionsClick">
+                            <ui:Button x:Name="BtnProjectActions" Content="项目" Click="BtnProjectActionsClick">
                                 <ui:Button.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="打开项目所在目录" Click="BtnOpenProjectFolderClick" />
-                                        <MenuItem Header="打开正式语言目录" Click="BtnOpenTargetFolderClick" />
+                                        <MenuItem Header="新建项目" Click="BtnNewProjectClick" />
+                                        <MenuItem Header="打开其他项目" Click="BtnOpenProjectClick" />
                                         <Separator />
-                                        <MenuItem Header="恢复上次发布" Click="BtnRestorePublishClick" />
+                                        <MenuItem Header="接收语言目录" Click="BtnImportFolderClick" />
+                                        <MenuItem Header="撤销上次合并" Click="BtnUndoMergeClick" />
+                                        <MenuItem Header="放弃保存的合并进度" Click="BtnDiscardMergeClick" />
+                                        <MenuItem Header="高级操作">
+                                            <MenuItem Header="同步游戏资源中的外部修改" Click="BtnSyncResourcesClick" />
+                                            <MenuItem Header="打开项目所在目录" Click="BtnOpenProjectFolderClick" />
+                                            <MenuItem Header="打开游戏资源目录" Click="BtnOpenTargetFolderClick" />
+                                            <MenuItem Header="恢复上次发布" Click="BtnRestorePublishClick" />
+                                        </MenuItem>
+                                        <Separator />
                                         <MenuItem Header="关闭项目" Click="BtnCloseProjectClick" />
                                     </ContextMenu>
                                 </ui:Button.ContextMenu>
@@ -580,9 +591,11 @@
                         </StackPanel>
                         <StackPanel Margin="0,0,12,0" VerticalAlignment="Center">
                             <TextBlock x:Name="ProjectNameTextBlock" Text="未打开项目" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                            <TextBlock x:Name="ProjectSummaryTextBlock" Text="新建项目或打开 .locproj 文件" FontSize="12" Opacity="0.62" TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="ProjectSummaryTextBlock" Text="打开协作副本即可继续编辑" FontSize="12" Opacity="0.62" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </DockPanel>
+                    <TextBlock x:Name="ProjectDropHint" Text="拖入协作副本直接打开" FontSize="12" Opacity="0.62" Margin="0,8,0,2" TextWrapping="Wrap" />
+                    </StackPanel>
                 </Border>
             </ui:NavigationView.Header>
             <ui:NavigationView.ContentOverlay>
