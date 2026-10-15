@@ -43,13 +43,14 @@ internal static partial class Program
         Run("Publish state-commit failure rolls back every language file", PublishRollback);
         Run("Restore rejects externally modified published files", RestoreConflict);
         Run("Multiple instances combine separate edits and protect conflicting values", WorkspaceConflict);
-        Run("Portable collaboration roundtrip, repeat and incremental revisions", CollaborationRoundtrip);
-        Run("JSON import is additive, previews conflicts and marks changed sources", LanguageImport);
+        Run("Dropped JSON merges against its export, repeats are no-ops and follow-ups show only new edits", JsonBaseMerge);
+        Run("Stale, partial and unrelated JSON never revert or delete newer content", StaleAndPartialFiles);
+        Run("JSON import previews conflicts and marks changed sources", LanguageImport);
         Run("Source deletion and modified translations require consistent choices", MergeDeletion);
         Run("Merge choices survive restart and unrelated editing", MergeDraft);
         Run("Stale previews preserve data and merge history can be undone safely", MergeHistory);
         Run("External resource sync rebases working changes and checks concurrent writes", ResourceSync);
-        Run("Collaboration rejects mismatched projects and malformed metadata", InvalidCollaboration);
+        Run("Merge ignores corrupt or foreign version records and rejects tampered metadata", TamperedMergeData);
         Run("Project validation rejects traversal/duplicate names and bad source files", InvalidProjects);
         Run("New and explicitly marked old keys translate together with per-language retry state", ForcedRetranslation);
         Run("Bulk paste batches validation and state notifications", BulkPaste);
@@ -649,7 +650,7 @@ internal static partial class Program
             PumpUntil(() => project.PendingChangeCount == 0);
             Equal(0, project.PendingChangeCount);
             True(Read(Target(project, "English")).ContainsKey("fixed"));
-            WpfCollaboration(window, project);
+            WpfJsonMerge(window, project);
             Invoke(window, "SetProject", null); Pump();
             True(!Control<ButtonBase>(window, "BtnAddNewRow").IsEnabled);
         }

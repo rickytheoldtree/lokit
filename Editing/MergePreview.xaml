@@ -55,7 +55,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="交接时的内容" Style="{StaticResource FieldLabelStyle}" />
+                <TextBlock Text="基准版本" Style="{StaticResource FieldLabelStyle}" />
                 <ui:TextBox Text="{Binding BeforeText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
                          Height="60" VerticalScrollBarVisibility="Auto" Style="{StaticResource StandardTextBoxStyle}" />
             </StackPanel>
@@ -65,7 +65,7 @@
                          Height="60" VerticalScrollBarVisibility="Auto" Style="{StaticResource StandardTextBoxStyle}" />
             </StackPanel>
             <StackPanel Grid.Column="4">
-                <TextBlock Text="传入的修改" Style="{StaticResource FieldLabelStyle}" />
+                <TextBlock Text="传入的文件" Style="{StaticResource FieldLabelStyle}" />
                 <ui:TextBox Text="{Binding IncomingText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
                          Height="60" VerticalScrollBarVisibility="Auto" Style="{StaticResource StandardTextBoxStyle}" />
             </StackPanel>

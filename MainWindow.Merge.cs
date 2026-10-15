@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using LocalizationTranslationWPF.Editing;
@@ -19,8 +19,8 @@ namespace LocalizationTranslationWPF
             {
                 var picker = new OpenFileDialog
                 {
-                    Title = "接收修改到当前项目",
-                    Filter = "协作副本或文案文件 (*.locproj;*.json)|*.locproj;*.json|协作副本 (*.locproj)|*.locproj|文案文件 (*.json)|*.json",
+                    Title = "接收 JSON 文案修改到当前项目",
+                    Filter = "文案文件 (*.json)|*.json",
                     Multiselect = true,
                 };
                 if (picker.ShowDialog(this) == true) await ReceiveFilesAsync(project, picker.FileNames);
@@ -33,27 +33,6 @@ namespace LocalizationTranslationWPF
             {
                 var picker = new OpenFolderDialog { Title = "接收语言目录中的修改" };
                 if (picker.ShowDialog(this) == true) await ReceiveFilesAsync(project, new[] { picker.FolderName });
-            });
-        }
-
-        private async void BtnShareProjectClick(object sender, RoutedEventArgs e)
-        {
-            await RunExchangeAsync(project =>
-            {
-                var picker = new SaveFileDialog
-                {
-                    Title = project.IsCollaborationCopy ? "保存修订副本，发回项目负责人" : "保存协作副本，发给同事继续编辑",
-                    Filter = "本地化协作副本 (*.locproj)|*.locproj",
-                    DefaultExt = ".locproj",
-                    FileName = project.Name + (project.IsCollaborationCopy ? "-修订.locproj" : "-协作.locproj"),
-                };
-                if (picker.ShowDialog(this) == true)
-                {
-                    project.ExportCollaboration(picker.FileName);
-                    ShowSnackbar("协作副本已保存", "把这个文件发给同事，用本工具打开即可编辑。修改后发回，拖入原项目合并。",
-                        ControlAppearance.Success, SymbolRegular.CheckmarkCircle24);
-                }
-                return Task.CompletedTask;
             });
         }
 
@@ -72,7 +51,8 @@ namespace LocalizationTranslationWPF
                 {
                     Title = "放弃保存的合并进度？",
                     Content = "当前项目文案保持原样。本次接收的内容和冲突选择将移除，之后可以重新拖入文件。",
-                    PrimaryButtonText = "放弃本次合并", CloseButtonText = "继续保留",
+                    PrimaryButtonText = "放弃本次合并",
+                    CloseButtonText = "继续保留",
                     DefaultButton = ContentDialogButton.Close,
                 };
                 if (await dialog.ShowAsync(CancellationToken.None) == ContentDialogResult.Primary) project.DiscardMergeDraft();
@@ -88,7 +68,9 @@ namespace LocalizationTranslationWPF
                 {
                     Title = "撤销上次合并？",
                     Content = "恢复合并前的项目文案。若合并后已继续修改或发布，将保留当前内容并阻止直接撤销。",
-                    PrimaryButtonText = "撤销合并", CloseButtonText = "取消", DefaultButton = ContentDialogButton.Close,
+                    PrimaryButtonText = "撤销合并",
+                    CloseButtonText = "取消",
+                    DefaultButton = ContentDialogButton.Close,
                 };
                 if (await dialog.ShowAsync(CancellationToken.None) != ContentDialogResult.Primary) return;
                 project.UndoLastMerge();
@@ -135,9 +117,9 @@ namespace LocalizationTranslationWPF
                 if (paths.Length == 1 && string.Equals(Path.GetExtension(paths[0]), ".locproj", StringComparison.OrdinalIgnoreCase))
                 {
                     try { SetProject(ProjectWorkspace.Open(paths[0])); }
-                    catch (Exception error) { ShowInfoBar("无法打开协作副本", error.Message, InfoBarSeverity.Error); }
+                    catch (Exception error) { ShowInfoBar("无法打开项目", error.Message, InfoBarSeverity.Error); }
                 }
-                else ShowInfoBar("请先创建或打开项目", "协作副本可以直接拖入打开；文案文件和语言目录需要先打开要接收修改的项目。", InfoBarSeverity.Informational);
+                else ShowInfoBar("请先创建或打开项目", "JSON 文案和语言目录需要拖入已打开的项目，才能合并修改。", InfoBarSeverity.Informational);
                 return;
             }
             await RunExchangeAsync(project => ReceiveFilesAsync(project, paths));
@@ -150,13 +132,6 @@ namespace LocalizationTranslationWPF
             {
                 await ShowMergePlanAsync(project, project.PreviewPendingMerge());
                 ShowInfoBar("请再次接收新文件", "刚才打开了已保存的合并进度。完成或放弃后，再拖入新文件。", InfoBarSeverity.Informational);
-                return;
-            }
-            var projectFiles = paths.Where(path => string.Equals(Path.GetExtension(path), ".locproj", StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (projectFiles.Length > 0)
-            {
-                if (paths.Length != 1) throw new InvalidOperationException("请一次接收一个协作副本；多个语言 JSON 可以一起导入。");
-                await ShowMergePlanAsync(project, project.PreviewCollaboration(projectFiles[0]));
                 return;
             }
             var files = new List<string>();
@@ -172,7 +147,7 @@ namespace LocalizationTranslationWPF
                     }
                 }
                 else if (string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase)) files.Add(path);
-                else throw new InvalidOperationException("请拖入协作副本、JSON 文案文件或语言目录。");
+                else throw new InvalidOperationException("请拖入 JSON 文案文件或语言目录。项目文件不能合并到当前项目。");
             }
             var mapped = new List<KeyValuePair<string, string>>();
             foreach (var file in files.Distinct(StringComparer.OrdinalIgnoreCase))
@@ -204,7 +179,11 @@ namespace LocalizationTranslationWPF
             panel.Children.Add(languages);
             var dialog = new ContentDialog(RootContentDialogHost)
             {
-                Title = "选择文案语言", Content = panel, PrimaryButtonText = "预览修改", CloseButtonText = "取消", IsPrimaryButtonEnabled = false,
+                Title = "选择文案语言",
+                Content = panel,
+                PrimaryButtonText = "预览修改",
+                CloseButtonText = "取消",
+                IsPrimaryButtonEnabled = false,
             };
             languages.SelectionChanged += (_, _) => dialog.IsPrimaryButtonEnabled = languages.SelectedIndex >= 0;
             return await dialog.ShowAsync(CancellationToken.None) == ContentDialogResult.Primary && languages.SelectedItem is Data.Pair pair ? pair.Name : null;
@@ -227,14 +206,21 @@ namespace LocalizationTranslationWPF
                 if (errorMessage != null) preview.ShowError(errorMessage);
                 var scroll = new ScrollViewer
                 {
-                    Content = preview, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    MaxHeight = Math.Max(220, ActualHeight - 230), Width = Math.Clamp(ActualWidth - 160, 640, 920),
+                    Content = preview,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    MaxHeight = Math.Max(220, ActualHeight - 230),
+                    Width = Math.Clamp(ActualWidth - 160, 640, 920),
                 };
                 var dialog = new ContentDialog(RootContentDialogHost)
                 {
-                    Title = "接收修改 · " + plan.Title, Content = scroll, DialogMaxWidth = 1000,
-                    PrimaryButtonText = "合并到当前项目", SecondaryButtonText = "保存进度，稍后处理", CloseButtonText = "取消",
-                    IsPrimaryButtonEnabled = plan.UnresolvedCount == 0, DefaultButton = ContentDialogButton.Close,
+                    Title = "接收修改 · " + plan.Title,
+                    Content = scroll,
+                    DialogMaxWidth = 1000,
+                    PrimaryButtonText = "合并到当前项目",
+                    SecondaryButtonText = "保存进度，稍后处理",
+                    CloseButtonText = "取消",
+                    IsPrimaryButtonEnabled = plan.UnresolvedCount == 0,
+                    DefaultButton = ContentDialogButton.Close,
                 };
                 preview.ChoicesChanged += () => dialog.IsPrimaryButtonEnabled = plan.UnresolvedCount == 0;
                 var result = await dialog.ShowAsync(CancellationToken.None);

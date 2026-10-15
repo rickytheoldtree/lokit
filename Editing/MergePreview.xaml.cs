@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -36,9 +36,8 @@ namespace LocalizationTranslationWPF.Editing
             view.Filter = Matches;
             ChangesGrid.ItemsSource = view;
             foreach (var entry in plan.Entries) entry.PropertyChanged += ChoiceChanged;
-            HintText.Text = plan.Request.Basis == null
-                ? "普通文案文件没有交接版本：新增可直接合并，已有内容不同则需要选择。文件中缺少的 Key 不会删除项目内容。"
-                : "互不冲突的修改已自动选择。点击一行比较内容；删除会明确显示，确认合并前不会修改项目文案。";
+            HintText.Text = string.Join(Environment.NewLine, plan.Notes.Append(
+                "互不冲突的修改已自动选择。点击一行比较内容；删除会明确显示，确认合并前不会修改项目文案。"));
             ChangesGrid.SelectedIndex = plan.Entries.Count > 0 ? 0 : -1;
             UpdateProgress();
         }

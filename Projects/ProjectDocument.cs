@@ -12,10 +12,6 @@ namespace LocalizationTranslationWPF.Projects
         public string SourceLanguage { get; set; } = string.Empty;
         public List<ProjectLanguage> Languages { get; set; } = new();
         public string? LastBackup { get; set; }
-        public string? CollaborationId { get; set; }
-        public List<LanguageSnapshot>? CollaborationBase { get; set; }
-        public Dictionary<string, List<LanguageSnapshot>> ReceivedCollaborations { get; set; } = new(StringComparer.Ordinal);
-        public HashSet<string> ReceivedImports { get; set; } = new(StringComparer.Ordinal);
         public MergeRequest? PendingMerge { get; set; }
         public string? LastMergeBackup { get; set; }
         public string? LastMergeState { get; set; }
@@ -69,6 +65,18 @@ namespace LocalizationTranslationWPF.Projects
         public string Language { get; set; } = string.Empty;
         public byte[]? Before { get; set; }
         public string? PublishedHash { get; set; }
+    }
+
+    // A language file the project exported or received. JSON edited outside the tool is merged
+    // against the recorded version it most likely started from.
+    internal sealed class LanguageVersion
+    {
+        public string ProjectId { get; set; } = string.Empty;
+        public string Language { get; set; } = string.Empty;
+        public string Kind { get; set; } = string.Empty;
+        public DateTime Time { get; set; }
+        public string? MergeBackup { get; set; }
+        public Dictionary<string, string> Values { get; set; } = new(StringComparer.Ordinal);
     }
 
     // Only the application's current selection is global; project data and file operations live

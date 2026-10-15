@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 
@@ -29,7 +29,7 @@ namespace LocalizationTranslationWPF.Projects
         public string? Incoming { get; set; }
         public bool IsConflict { get; set; }
         [JsonIgnore] public string Kind => IsConflict ? "冲突" : Incoming == null ? "删除" : Current == null ? "新增" : "修改";
-        [JsonIgnore] public string BeforeText => Before ?? "（不存在）";
+        [JsonIgnore] public string BeforeText => Before ?? "（无）";
         [JsonIgnore] public string CurrentText => Current ?? "（不存在）";
         [JsonIgnore] public string IncomingText => Incoming ?? "（删除 / 不存在）";
         public MergeResolution Resolution
@@ -42,7 +42,8 @@ namespace LocalizationTranslationWPF.Projects
             get => result;
             set { result = value; Notify(); }
         }
-        [JsonIgnore] public string? MergedValue => Resolution switch
+        [JsonIgnore]
+        public string? MergedValue => Resolution switch
         {
             MergeResolution.KeepCurrent => Current,
             MergeResolution.UseIncoming => Incoming,
@@ -60,8 +61,9 @@ namespace LocalizationTranslationWPF.Projects
         public string Title { get; set; } = string.Empty;
         public List<LanguageSnapshot>? Basis { get; set; }
         public List<LanguageSnapshot> Incoming { get; set; } = new();
-        public string? CollaborationId { get; set; }
-        public string? Receipt { get; set; }
+        // Set for merges that bring in a file version worth remembering as a future merge base.
+        public string? HistoryKind { get; set; }
+        public List<string> Notes { get; set; } = new();
         public Dictionary<string, string?>? TargetHashes { get; set; }
         public List<MergeEntry> Choices { get; set; } = new();
     }
@@ -81,6 +83,7 @@ namespace LocalizationTranslationWPF.Projects
         internal long Revision { get; }
         internal MergeRequest Request { get; }
         public string Title => Request.Title;
+        public IReadOnlyList<string> Notes => Request.Notes;
         public IReadOnlyList<MergeEntry> Entries { get; }
         public int ConflictCount => Entries.Count(e => e.IsConflict);
         public int UnresolvedCount => Entries.Count(e => e.Resolution == MergeResolution.Unresolved);

@@ -176,35 +176,29 @@ namespace LocalizationTranslationWPF
             var project = ProjectContext.Current;
             ProjectNameTextBlock.Text = project?.Name ?? "未打开项目";
             ProjectNameTextBlock.ToolTip = project?.FilePath;
-            ProjectSummaryTextBlock.Text = project == null ? "打开协作副本即可继续编辑"
-                : $"{project.SourceLanguage.Name} · {project.Pairs.Count} 种语言 · {project.PendingChangeCount} 项" + (project.IsCollaborationCopy ? "修订" : "待导出") +
+            ProjectSummaryTextBlock.Text = project == null ? "新建项目或打开 .locproj 文件"
+                : $"{project.SourceLanguage.Name} · {project.Pairs.Count} 种语言 · {project.PendingChangeCount} 项待导出" +
                   (project.PendingRetranslationCount > 0 ? $" · {project.PendingRetranslationCount} 项待重译" : string.Empty);
             ProjectSummaryTextBlock.ToolTip = project?.TargetDirectory;
             var available = project != null && cts == null && !isProjectActionActive;
-            BtnPublishProject.IsEnabled = available && project!.HasPublishTarget;
-            BtnPublishProject.Visibility = project?.HasPublishTarget == true ? Visibility.Visible : Visibility.Collapsed;
+            BtnPublishProject.IsEnabled = available;
+            BtnPublishProject.Visibility = project == null ? Visibility.Collapsed : Visibility.Visible;
             BtnReceiveChanges.IsEnabled = available;
             BtnReceiveChanges.Visibility = project == null ? Visibility.Collapsed : Visibility.Visible;
-            BtnShareProject.IsEnabled = available;
-            BtnShareProject.Visibility = project == null ? Visibility.Collapsed : Visibility.Visible;
-            BtnShareProject.Content = project?.IsCollaborationCopy == true ? "保存并发回" : "发给协作者";
             BtnContinueMerge.IsEnabled = available;
             BtnContinueMerge.Visibility = project?.HasPendingMerge == true ? Visibility.Visible : Visibility.Collapsed;
             BtnCreateProject.Visibility = project == null ? Visibility.Visible : Visibility.Collapsed;
             BtnOpenProject.Visibility = project == null ? Visibility.Visible : Visibility.Collapsed;
             BtnProjectActions.IsEnabled = cts == null && !isProjectActionActive;
-            ProjectDropHint.Text = project == null ? "拖入协作副本直接打开"
-                : project.IsCollaborationCopy ? "直接编辑或新增文案，完成后“保存并发回”。也可以拖入文件接收修改。"
-                : "拖入协作副本、文案文件或语言目录，预览并合并到当前项目。";
+            ProjectDropHint.Text = project == null ? "拖入 .locproj 项目文件直接打开"
+                : "收到改过的 JSON？拖入文件或语言目录，自动对照导出过的版本合并，只有双方都改过的文案需要选择。";
             ProjectWelcomeCard.Visibility = project == null ? Visibility.Visible : Visibility.Collapsed;
             TranslationConfigurationCard.Visibility = project == null ? Visibility.Collapsed : Visibility.Visible;
             TranslationUtilitiesCard.Visibility = project == null ? Visibility.Collapsed : Visibility.Visible;
             SourceLangComboBox.IsEnabled = false;
             DictConverterComboBox.IsEnabled = project == null;
             IsoPairComboBox.IsEnabled = project == null;
-            ProjectLocationTextBlock.Text = project?.IsCollaborationCopy == true
-                ? "修改会保存到这份协作副本。完成后点击“保存并发回”，由项目负责人合并；无需配置游戏目录。"
-                : "修改保存在项目中。通过“发给协作者”交给同事继续编辑，收到修订后用“接收修改”合并。检查完成后可导出游戏资源。";
+            ProjectLocationTextBlock.Text = "修改保存在项目中，检查完成后导出游戏资源。别人改过的 JSON 文件拖入项目即可合并，无需重新建项目。";
             AddNewPageDescription.Text = project == null ? "请先创建或打开项目。"
                 : $"新增到 {project.SourceLanguage.Name}，保存后可直接翻译；正式文件在发布前保持不变。";
             UpdateEditingStateUi();
@@ -222,7 +216,7 @@ namespace LocalizationTranslationWPF
         }
         private void BtnOpenTargetFolderClick(object sender, RoutedEventArgs e)
         {
-            if (ProjectContext.Current is { HasPublishTarget: true } project) PathUtils.OpenFolder(project.TargetDirectory);
+            if (ProjectContext.Current is { } project) PathUtils.OpenFolder(project.TargetDirectory);
         }
 
         private async void BtnPublishProjectClick(object sender, RoutedEventArgs e)

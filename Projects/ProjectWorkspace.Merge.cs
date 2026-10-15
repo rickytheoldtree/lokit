@@ -1,5 +1,6 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
+using LocalizationTranslationWPF.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -7,62 +8,10 @@ namespace LocalizationTranslationWPF.Projects
 {
     public sealed partial class ProjectWorkspace
     {
-        public void ExportCollaboration(string path)
-        {
-            lock (sync)
-            {
-                RefreshWorkspaceFromDisk();
-                if (document.PendingMerge != null) throw new InvalidOperationException("请先完成或放弃当前合并，再发送协作副本。");
-                if (CurrentHash(FilePath) != fileHash) throw new IOException("项目文件已变化，请先接收项目文件中的最新修改。");
-                if (string.Equals(Path.GetFullPath(path), FilePath, StringComparison.OrdinalIgnoreCase))
-                    throw new IOException("请选择另一个文件名，保留当前项目作为自己的工作副本。");
-                var share = Clone(document);
-                share.TargetDirectory = string.Empty;
-                share.LastBackup = null;
-                share.LastMergeBackup = null;
-                share.LastMergeState = null;
-                share.ReceivedCollaborations.Clear();
-                share.ReceivedImports.Clear();
-                share.CollaborationId ??= Guid.NewGuid().ToString("N");
-                share.CollaborationBase ??= Snapshot(document);
-                foreach (var language in share.Languages)
-                {
-                    language.Baseline = Copy(language.Working);
-                    language.BaselineHash = null;
-                }
-                Validate(share);
-                Utils.IOUtils.AtomicWriteAllText(path, JsonConvert.SerializeObject(share, Formatting.Indented));
-            }
-        }
+        private const int MaxVersionsPerLanguage = 30;
 
-        public MergePlan PreviewCollaboration(string path)
-        {
-            var bytes = File.ReadAllBytes(path);
-            var incoming = JsonConvert.DeserializeObject<ProjectDocument>(Decode(bytes))
-                ?? throw new InvalidDataException("协作文件为空。");
-            Validate(incoming);
-            lock (sync)
-            {
-                RefreshWorkspaceFromDisk();
-                EnsureNoPendingMerge();
-                if (incoming.Id != document.Id || incoming.SourceLanguage != document.SourceLanguage ||
-                    incoming.ConverterType != document.ConverterType || incoming.Languages.Count != document.Languages.Count ||
-                    incoming.Languages.Any(l => !document.Languages.Any(current => current.Name == l.Name && current.IsoCode == l.IsoCode)))
-                    throw new InvalidDataException("这个文件属于另一个项目，或语言配置不同。请打开对应项目后再接收修改。");
-                var values = Snapshot(incoming);
-                var receipt = incoming.CollaborationId == null ? null : incoming.CollaborationId + ":" + SnapshotHash(values);
-                var basis = incoming.CollaborationId != null && document.ReceivedCollaborations.TryGetValue(incoming.CollaborationId, out var previous)
-                    ? previous : incoming.CollaborationBase;
-                return BuildMergePlan(new MergeRequest
-                {
-                    Title = Path.GetFileName(path),
-                    Incoming = receipt != null && document.ReceivedImports.Contains(receipt) ? new() : values,
-                    Basis = basis,
-                    CollaborationId = incoming.CollaborationId,
-                    Receipt = receipt,
-                });
-            }
-        }
+        private string HistoryDirectory => FilePath + ".history";
+        private string VersionDirectory(string language) => Path.Combine(HistoryDirectory, "versions", language);
 
         public MergePlan PreviewLanguageImport(IEnumerable<KeyValuePair<string, string>> languageFiles)
         {
@@ -70,12 +19,13 @@ namespace LocalizationTranslationWPF.Projects
             {
                 RefreshWorkspaceFromDisk();
                 EnsureNoPendingMerge();
-                var request = new MergeRequest { Title = "导入文案" };
+                var request = new MergeRequest { Basis = new(), HistoryKind = "收到" };
                 var names = new HashSet<string>(StringComparer.Ordinal);
+                var fileNames = new List<string>();
                 var converter = CreateConverter(ConverterType);
                 foreach (var file in languageFiles)
                 {
-                    _ = Language(document, file.Key);
+                    var language = Language(document, file.Key);
                     if (!names.Add(file.Key)) throw new InvalidDataException($"一次只能导入一个“{file.Key}”文件，请分别接收这些修订。");
                     var bytes = File.ReadAllBytes(file.Value);
                     // Reject duplicate properties before a converter can silently discard a value.
@@ -83,8 +33,22 @@ namespace LocalizationTranslationWPF.Projects
                     var values = Parse(bytes, converter, file.Value);
                     if (values.Keys.Any(string.IsNullOrWhiteSpace)) throw new InvalidDataException("导入文件的 Key 不能为空。");
                     request.Incoming.Add(new LanguageSnapshot { Name = file.Key, Values = values });
+                    fileNames.Add(Path.GetFileName(file.Value));
+                    var match = MatchBase(values, Candidates(language));
+                    if (match == null)
+                    {
+                        request.Notes.Add($"{file.Key}：没有找到这份文件对应的导出版本，内容不同的已有文案需要逐条确认；文件中缺少的 Key 不会删除。");
+                        continue;
+                    }
+                    var (version, partial) = match.Value;
+                    // A file containing only some keys says nothing about the others, so never infer deletions from it.
+                    var basis = partial ? version.Values.Where(p => values.ContainsKey(p.Key)).ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal)
+                        : Copy(version.Values);
+                    request.Basis.Add(new LanguageSnapshot { Name = file.Key, Values = basis });
+                    request.Notes.Add($"{file.Key}：以{Describe(version)}为基准" + (partial ? "。文件只包含部分 Key，缺少的 Key 保持不变。" : "。"));
                 }
                 if (request.Incoming.Count == 0) throw new InvalidDataException("没有可导入的语言文件。");
+                request.Title = fileNames.Count == 1 ? fileNames[0] : $"{fileNames.Count} 个文案文件";
                 return BuildMergePlan(request);
             }
         }
@@ -95,9 +59,8 @@ namespace LocalizationTranslationWPF.Projects
             {
                 RefreshWorkspaceFromDisk();
                 EnsureNoPendingMerge();
-                if (!HasPublishTarget) throw new InvalidOperationException("协作副本无需同步游戏目录，请接收协作文件。");
                 var converter = CreateConverter(ConverterType);
-                var request = new MergeRequest { Title = "同步游戏资源", Basis = new(), TargetHashes = new(StringComparer.Ordinal) };
+                var request = new MergeRequest { Title = "同步游戏资源", Basis = new(), HistoryKind = "同步", TargetHashes = new(StringComparer.Ordinal) };
                 foreach (var language in document.Languages)
                 {
                     var path = TargetPath(document, language.Name);
@@ -200,33 +163,36 @@ namespace LocalizationTranslationWPF.Projects
                         language.Baseline = Copy(incoming.Values);
                         language.BaselineHash = plan.Request.TargetHashes[incoming.Name];
                     }
-                if (plan.Request.CollaborationId != null && plan.Request.Incoming.Count > 0)
-                    next.ReceivedCollaborations[plan.Request.CollaborationId] = plan.Request.Incoming;
-                if (plan.Request.Receipt != null) next.ReceivedImports.Add(plan.Request.Receipt);
                 next.PendingMerge = null;
                 var beforeMerge = Clone(document);
                 beforeMerge.PendingMerge = null;
                 var name = $"{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.locproj";
-                Utils.IOUtils.AtomicWriteAllText(Path.Combine(FilePath + ".history", name), JsonConvert.SerializeObject(beforeMerge, Formatting.Indented));
+                IOUtils.AtomicWriteAllText(Path.Combine(HistoryDirectory, name), JsonConvert.SerializeObject(beforeMerge, Formatting.Indented));
                 next.LastMergeBackup = name;
                 next.LastMergeState = MergeStateHash(next);
             });
+            if (plan.Request.HistoryKind is { } kind)
+                lock (sync) RecordVersions(kind, plan.Request.Incoming, document.LastMergeBackup);
         }
 
         public void UndoLastMerge()
         {
+            string undone;
             lock (sync)
             {
                 using var lease = AcquireProjectLock();
                 if (document.LastMergeBackup == null) throw new InvalidOperationException("没有可撤销的合并。");
                 if (document.PendingMerge != null || document.LastMergeState != MergeStateHash(document))
                     throw new InvalidOperationException("合并后已有其他修改或发布，不能直接撤销。合并前的副本仍保存在项目旁的 .history 目录中。");
-                var before = JsonConvert.DeserializeObject<ProjectDocument>(File.ReadAllText(Path.Combine(FilePath + ".history", document.LastMergeBackup)))
+                undone = document.LastMergeBackup;
+                var before = JsonConvert.DeserializeObject<ProjectDocument>(File.ReadAllText(Path.Combine(HistoryDirectory, undone)))
                     ?? throw new InvalidDataException("合并前的副本无效。");
                 Validate(before);
                 if (before.Id != document.Id || before.TargetDirectory != document.TargetDirectory)
                     throw new InvalidDataException("合并前的副本不属于当前项目。");
                 Commit(before);
+                // The undone file must not become the base for the next import of the same file.
+                ForgetVersions(undone);
             }
             Changed?.Invoke();
         }
@@ -257,8 +223,13 @@ namespace LocalizationTranslationWPF.Projects
                     var conflict = basis == null ? local != null : local != original;
                     var entry = new MergeEntry
                     {
-                        Language = incoming.Name, Key = key, Before = original, Current = local, Incoming = remote,
-                        IsConflict = conflict, Result = remote ?? string.Empty,
+                        Language = incoming.Name,
+                        Key = key,
+                        Before = original,
+                        Current = local,
+                        Incoming = remote,
+                        IsConflict = conflict,
+                        Result = remote ?? string.Empty,
                         Resolution = conflict ? MergeResolution.Unresolved : MergeResolution.UseIncoming,
                     };
                     if (choices.TryGetValue((entry.Language, entry.Key), out var previous) && previous.Current == entry.Current &&
@@ -268,6 +239,114 @@ namespace LocalizationTranslationWPF.Projects
                 }
             }
             return new MergePlan(document.Id, fileHash, revision, request, entries);
+        }
+
+        // Pick the recorded version the incoming file was most likely edited from: the most unchanged
+        // values, minus the keys it would delete, so a stale or newer export is not mistaken for the base.
+        private static (LanguageVersion Version, bool Partial)? MatchBase(Dictionary<string, string> incoming, IEnumerable<LanguageVersion> candidates)
+        {
+            (LanguageVersion Version, bool Partial)? best = null;
+            var bestScore = int.MinValue;
+            foreach (var candidate in candidates)
+            {
+                int shared = 0, same = 0;
+                foreach (var pair in candidate.Values)
+                    if (incoming.TryGetValue(pair.Key, out var value)) { shared++; if (value == pair.Value) same++; }
+                // Unrelated files share few keys with every version; merging against them would invent deletions.
+                if (shared == 0 || (shared * 2 < incoming.Count && shared * 2 < candidate.Values.Count)) continue;
+                var missing = candidate.Values.Count - shared;
+                var partial = missing > shared;
+                var score = same - (partial ? 0 : missing);
+                if (best == null || score > bestScore || (score == bestScore && candidate.Time > best.Value.Version.Time))
+                {
+                    best = (candidate, partial);
+                    bestScore = score;
+                }
+            }
+            return best;
+        }
+
+        private List<LanguageVersion> Candidates(ProjectLanguage language)
+        {
+            var versions = LoadVersions(language.Name);
+            // Projects created before version history only know the last exported file.
+            if (language.Baseline.Count > 0 && !versions.Any(v => Same(v.Values, language.Baseline)))
+                versions.Add(new LanguageVersion { Language = language.Name, Kind = "上次导出", Time = DateTime.MaxValue, Values = Copy(language.Baseline) });
+            return versions;
+        }
+
+        private static string Describe(LanguageVersion version) => version.Kind switch
+        {
+            "上次导出" => "上次导出的版本",
+            "创建项目" => $"创建项目时（{version.Time:M月d日 HH:mm}）的版本",
+            "导出" => $"{version.Time:M月d日 HH:mm} 导出的版本",
+            "同步" => $"{version.Time:M月d日 HH:mm} 同步的游戏资源",
+            _ => $"{version.Time:M月d日 HH:mm} 收到的文件",
+        };
+
+        private List<LanguageVersion> LoadVersions(string language) => LoadVersionFiles(language).Select(v => v.Version).ToList();
+
+        private IEnumerable<(string Path, LanguageVersion Version)> LoadVersionFiles(string language)
+        {
+            var directory = VersionDirectory(language);
+            if (!Directory.Exists(directory)) yield break;
+            foreach (var file in Directory.EnumerateFiles(directory, "*.json").ToArray())
+            {
+                LanguageVersion? version = null;
+                try { version = JsonConvert.DeserializeObject<LanguageVersion>(File.ReadAllText(file)); }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+                {
+                    LogUtils.LogError($"跳过无法读取的版本记录 {file}：{error.Message}");
+                }
+                if (version?.Values != null && version.ProjectId == document.Id && version.Language == language &&
+                    version.Values.All(p => !string.IsNullOrWhiteSpace(p.Key) && p.Value != null))
+                {
+                    version.Values = Copy(version.Values);
+                    yield return (file, version);
+                }
+            }
+        }
+
+        // History only improves later merges, so a failure here must not undo a completed publish or merge.
+        private void RecordVersions(string kind, IEnumerable<LanguageSnapshot> snapshots, string? mergeBackup = null)
+        {
+            try
+            {
+                var time = DateTime.Now;
+                foreach (var snapshot in snapshots.Where(s => s.Values.Count > 0))
+                {
+                    var directory = VersionDirectory(snapshot.Name);
+                    Directory.CreateDirectory(directory);
+                    var version = new LanguageVersion
+                    {
+                        ProjectId = document.Id,
+                        Language = snapshot.Name,
+                        Kind = kind,
+                        Time = time,
+                        MergeBackup = mergeBackup,
+                        Values = snapshot.Values,
+                    };
+                    IOUtils.AtomicWriteAllText(Path.Combine(directory, $"{time:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}.json"), JsonConvert.SerializeObject(version));
+                    foreach (var old in Directory.EnumerateFiles(directory, "*.json").OrderByDescending(f => Path.GetFileName(f), StringComparer.Ordinal)
+                        .Skip(MaxVersionsPerLanguage))
+                        File.Delete(old);
+                }
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                LogUtils.LogError($"记录文案版本失败，之后导入时可能需要手动确认更多差异：{error.Message}");
+            }
+        }
+
+        private void ForgetVersions(string mergeBackup)
+        {
+            foreach (var language in document.Languages)
+                foreach (var version in LoadVersionFiles(language.Name).Where(v => v.Version.MergeBackup == mergeBackup))
+                    try { File.Delete(version.Path); }
+                    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                    {
+                        LogUtils.LogError($"无法移除已撤销合并的版本记录 {version.Path}：{error.Message}");
+                    }
         }
 
         private void CheckMergePlan(MergePlan plan)
@@ -281,16 +360,6 @@ namespace LocalizationTranslationWPF.Projects
             if (document.PendingMerge != null) throw new InvalidOperationException("已有保存的合并进度，请先点击“继续合并”处理，或在项目操作中放弃本次合并。");
         }
 
-        private static List<LanguageSnapshot> Snapshot(ProjectDocument data) => data.Languages.Select(language =>
-            new LanguageSnapshot { Name = language.Name, Values = Copy(language.Working) }).ToList();
-
-        private static string SnapshotHash(List<LanguageSnapshot> snapshots) => Hash(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
-            snapshots.OrderBy(l => l.Name, StringComparer.Ordinal).Select(l => new
-            {
-                l.Name,
-                Values = l.Values.OrderBy(p => p.Key, StringComparer.Ordinal),
-            }))));
-
         private static MergeRequest CloneRequest(MergeRequest request) => JsonConvert.DeserializeObject<MergeRequest>(JsonConvert.SerializeObject(request))!;
 
         private static string MergeStateHash(ProjectDocument data)
@@ -301,25 +370,20 @@ namespace LocalizationTranslationWPF.Projects
             return Hash(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(copy)));
         }
 
-        private static void ValidateCollaboration(ProjectDocument data)
+        private static void ValidateMerge(ProjectDocument data)
         {
-            if (data.ReceivedCollaborations == null || data.ReceivedImports == null ||
-                (data.CollaborationBase == null) != (data.CollaborationId == null) || data.CollaborationId == string.Empty)
-                throw new InvalidDataException("项目的协作信息无效。");
-            void ValidateSnapshots(List<LanguageSnapshot> snapshots, bool complete)
+            void ValidateSnapshots(List<LanguageSnapshot> snapshots)
             {
-                if ((complete && snapshots.Count != data.Languages.Count) || snapshots.Any(l => l == null || l.Values == null ||
+                if (snapshots.Any(l => l == null || l.Values == null ||
                     l.Values.Any(p => string.IsNullOrWhiteSpace(p.Key) || p.Value == null) || !data.Languages.Any(current => current.Name == l.Name)) ||
                     snapshots.Select(l => l.Name).Distinct(StringComparer.Ordinal).Count() != snapshots.Count)
-                    throw new InvalidDataException("协作文件中的语言或文案无效。");
+                    throw new InvalidDataException("合并进度中的语言或文案无效。");
             }
-            if (data.CollaborationBase != null) ValidateSnapshots(data.CollaborationBase, true);
-            foreach (var snapshots in data.ReceivedCollaborations.Values) ValidateSnapshots(snapshots, true);
             if (data.PendingMerge is { } pending)
             {
-                if (pending.Incoming == null || pending.Choices == null) throw new InvalidDataException("合并进度无效。");
-                ValidateSnapshots(pending.Incoming, false);
-                if (pending.Basis != null) ValidateSnapshots(pending.Basis, false);
+                if (pending.Incoming == null || pending.Choices == null || pending.Notes == null) throw new InvalidDataException("合并进度无效。");
+                ValidateSnapshots(pending.Incoming);
+                if (pending.Basis != null) ValidateSnapshots(pending.Basis);
                 if (pending.Choices.Any(choice => choice == null || !Enum.IsDefined(choice.Resolution) || choice.Result == null))
                     throw new InvalidDataException("合并选择无效。");
                 if (pending.TargetHashes != null && (pending.TargetHashes.Count != pending.Incoming.Count ||

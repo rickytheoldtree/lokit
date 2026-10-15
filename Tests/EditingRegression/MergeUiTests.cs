@@ -12,22 +12,21 @@ using TextBox = System.Windows.Controls.TextBox;
 
 internal static partial class Program
 {
-    private static void WpfCollaboration(MainWindow window, ProjectWorkspace owner)
+    private static void WpfJsonMerge(MainWindow window, ProjectWorkspace owner)
     {
         PumpDelay(300);
         True(window.AllowDrop);
         True(!Control<System.Windows.Controls.TextBlock>(window, "ProjectLocationTextBlock").Text.Contains(owner.TargetDirectory, StringComparison.Ordinal));
-        var path = SharePath(owner);
-        owner.ExportCollaboration(path);
-        var product = ProjectWorkspace.Open(path);
-        Change(product, "English", "base", "Product source {0}");
-        product.AddSourceEntries(new() { ["review-new"] = "New product copy" });
+        // The exported file comes back edited while the project changed the same entry.
+        var path = IncomingPath(owner, "English");
+        Write(path, new(Read(Target(owner, "English"))) { ["base"] = "Product source {0}", ["review-new"] = "New product copy" });
         Change(owner, "English", "base", "Owner source {0}");
         var task = InvokeDrop(window, path);
         Pump();
         if (task.IsCompleted) throw new InvalidOperationException("Drop returned without a dialog: " + Control<InfoBar>(window, "MainInfoBar").Message);
         var dialog = MergeDialog(window);
         var preview = Descendants(dialog).OfType<MergePreview>().Single();
+        True(((System.Windows.Controls.TextBlock)preview.FindName("HintText")).Text.Contains("导出的版本", StringComparison.Ordinal));
         var primary = DialogButton(dialog, "合并到当前项目");
         True(!primary.IsEnabled);
         var grid = (System.Windows.Controls.DataGrid)preview.FindName("ChangesGrid");
@@ -78,14 +77,16 @@ internal static partial class Program
         PumpUntil(() => !owner.ReadLanguage("English").ContainsKey("review-new"));
         Equal("Owner source {0}", owner.ReadLanguage("English")["base"]);
         True(owner.ReadLanguage("English").ContainsKey("meanwhile-ui"));
+        // Without an open project, a dropped project file opens; JSON has nothing to merge into.
         Invoke(window, "SetProject", null);
         task = InvokeDrop(window, path);
         PumpUntil(() => task.IsCompleted);
         task.GetAwaiter().GetResult();
-        True(ProjectContext.Current?.IsCollaborationCopy == true);
-        Equal(Visibility.Collapsed, Control<FrameworkElement>(window, "BtnPublishProject").Visibility);
-        Equal("保存并发回", Control<Button>(window, "BtnShareProject").Content?.ToString());
-        Capture(window, "portable-collaboration.png");
+        True(ProjectContext.Current == null);
+        task = InvokeDrop(window, owner.FilePath);
+        PumpUntil(() => task.IsCompleted);
+        task.GetAwaiter().GetResult();
+        Equal(owner.FilePath, ProjectContext.Current?.FilePath);
         Invoke(window, "SetProject", owner);
     }
 
