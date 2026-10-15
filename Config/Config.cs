@@ -37,10 +37,12 @@ namespace LocalizationTranslationWPF.Data
 
         public enum TranslateMethod
         {
+            //数值是写进配置文件的，只能往后追加，不能重排
             GoogleTranslate,
             DeepSeek,
             DeepSeekWithDeepThinking,
             AIApi,
+            DeepL,
         }
 
         public enum TargetLangAmount

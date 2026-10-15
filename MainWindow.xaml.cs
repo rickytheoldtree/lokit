@@ -254,6 +254,7 @@ namespace LocalizationTranslationWPF
                 TranslateMethod.DeepSeek => DeepSeekWebDriverTranslator.Run(false, token),
                 TranslateMethod.DeepSeekWithDeepThinking => DeepSeekWebDriverTranslator.Run(true, token),
                 TranslateMethod.AIApi => AIApiTranslator.Run(token),
+                TranslateMethod.DeepL => DeepLWebDriverTranslator.Run(token),
                 _ => Task.FromResult(false),
             };
         }

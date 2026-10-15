@@ -46,7 +46,8 @@
 ## 环境与翻译方式
 
 - Windows 和 [.NET 8 桌面运行时](https://dotnet.microsoft.com/download/dotnet/8.0)。
-- Google / DeepSeek 网页翻译需要本机安装 Edge、Chrome 或 Firefox；API 翻译不需要浏览器。
+- Google / DeepL / DeepSeek 网页翻译需要本机安装 Edge、Chrome 或 Firefox；API 翻译不需要浏览器。
+- DeepL 网页翻译未登录时单次最多 1500 字符，程序会自动分批；语言规则中的 `zh-CN` / `zh-TW` 会自动换成 DeepL 的简体 / 繁体中文代码。DeepL 不支持的语言会在日志中报错。
 - API 模式在设置页填写接口地址、Key、模型及提示词。设置保存于本机 `data/config.json`，请勿把该文件作为项目资料分享。
 
 ### 浏览器驱动
