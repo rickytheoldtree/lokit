@@ -67,9 +67,14 @@ namespace LocalizationTranslationWPF.Translate
             var sourceText = converter.Serialize(source);
             var response = await request(sourceText, to, token);
             token.ThrowIfCancellationRequested();
+            return ParseAiResponse(source, converter, response);
+        }
 
+        public static Dictionary<string, string> ParseAiResponse(Dictionary<string, string> source,
+            IDictConverter.IDictConverter converter, string? response)
+        {
             InvalidDataException? validationError = null;
-            foreach (var candidate in ResponseCandidates(response, sourceText.TrimStart().StartsWith('{')))
+            foreach (var candidate in ResponseCandidates(response, converter.Serialize(source).TrimStart().StartsWith('{')))
             {
                 Dictionary<string, string>? values;
                 try

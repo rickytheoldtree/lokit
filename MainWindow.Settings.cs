@@ -73,9 +73,11 @@ namespace LocalizationTranslationWPF
         private void TranslateMethodComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!Equals(e.Source, TranslateMethodComboBox)) return;
-            if (TranslateMethodComboBox.SelectedIndex == -1) return;
+            if (TranslateMethodComboBox.SelectedItem is not TranslationMethodChoice choice) return;
 
-            ConfigUtils.TranslateMethod.Value = (TranslateMethod)TranslateMethodComboBox.SelectedIndex;
+            ConfigUtils.TranslateMethod.Value = choice.Method;
+            ManualTranslationHint.Visibility = choice.Method == TranslateMethod.ManualAI
+                ? Visibility.Visible : Visibility.Collapsed;
             UpdateStartButtonState();
         }
 

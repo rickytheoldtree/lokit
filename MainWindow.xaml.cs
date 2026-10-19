@@ -93,7 +93,9 @@ namespace LocalizationTranslationWPF
             TargetLangComboBox.SelectedIndex = ConfigUtils.TargetLangIndex.Value;
             ToolTipService.SetInitialShowDelay(TargetLangComboBox, 0);
 
-            BindEnum<TranslateMethod>(TranslateMethodComboBox, (int)ConfigUtils.TranslateMethod.Value);
+            TranslateMethodComboBox.ItemsSource = TranslationMethodChoices;
+            TranslateMethodComboBox.SelectedItem = TranslationMethodChoices.FirstOrDefault(
+                choice => choice.Method == ConfigUtils.TranslateMethod.Value) ?? TranslationMethodChoices[0];
             TargetLangAmountComboBox.ItemsSource = new[]
             {
                 new TranslationScopeChoice(TargetLangAmount.Single, "选定语言"),
@@ -164,11 +166,20 @@ namespace LocalizationTranslationWPF
             public override string ToString() => Name;
         }
 
-        private static void BindEnum<T>(Selector comboBox, int selectedIndex) where T : Enum
+        private sealed record TranslationMethodChoice(TranslateMethod Method, string Name)
         {
-            comboBox.ItemsSource = Enum.GetValues(typeof(T)).Cast<T>();
-            comboBox.SelectedIndex = selectedIndex;
+            public override string ToString() => Name;
         }
+
+        private static readonly TranslationMethodChoice[] TranslationMethodChoices =
+        {
+            new(TranslateMethod.GoogleTranslate, "Google 网页翻译"),
+            new(TranslateMethod.DeepSeek, "DeepSeek 网页翻译"),
+            new(TranslateMethod.DeepSeekWithDeepThinking, "DeepSeek 网页翻译（深度思考）"),
+            new(TranslateMethod.AIApi, "AI API 翻译"),
+            new(TranslateMethod.DeepL, "DeepL 网页翻译"),
+            new(TranslateMethod.ManualAI, "手动 AI（复制 / 粘贴）"),
+        };
 
         #endregion
 
@@ -194,15 +205,18 @@ namespace LocalizationTranslationWPF
                 SetUILock(true);
                 SetStatus("任务运行中", Brushes.DodgerBlue);
 
-                popWindow = new PopWindow("任务正在运行，请稍候...", "取消任务", window =>
+                if (ConfigUtils.TranslateMethod.Value != TranslateMethod.ManualAI)
                 {
-                    tokenSource.Cancel();
-                    SetStatus("正在取消任务", Brushes.Orange);
-                })
-                {
-                    Owner = this
-                };
-                popWindow.Show();
+                    popWindow = new PopWindow("任务正在运行，请稍候...", "取消任务", window =>
+                    {
+                        tokenSource.Cancel();
+                        SetStatus("正在取消任务", Brushes.Orange);
+                    })
+                    {
+                        Owner = this
+                    };
+                    popWindow.Show();
+                }
 
                 var succeeded = await StartTranslate(tokenSource.Token);
 
@@ -246,7 +260,7 @@ namespace LocalizationTranslationWPF
             }
         }
 
-        private static Task<bool> StartTranslate(CancellationToken token)
+        private Task<bool> StartTranslate(CancellationToken token)
         {
             return ConfigUtils.TranslateMethod.Value switch
             {
@@ -255,6 +269,7 @@ namespace LocalizationTranslationWPF
                 TranslateMethod.DeepSeekWithDeepThinking => DeepSeekWebDriverTranslator.Run(true, token),
                 TranslateMethod.AIApi => AIApiTranslator.Run(token),
                 TranslateMethod.DeepL => DeepLWebDriverTranslator.Run(token),
+                TranslateMethod.ManualAI => RunManualTranslationAsync(token),
                 _ => Task.FromResult(false),
             };
         }

@@ -651,6 +651,7 @@ internal static partial class Program
             Equal(0, project.PendingChangeCount);
             True(Read(Target(project, "English")).ContainsKey("fixed"));
             WpfJsonMerge(window, project);
+            WpfManualTranslation(window);
             Invoke(window, "SetProject", null); Pump();
             True(!Control<ButtonBase>(window, "BtnAddNewRow").IsEnabled);
         }

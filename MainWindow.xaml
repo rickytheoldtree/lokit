@@ -100,12 +100,15 @@
                                                Icon="{ui:SymbolIcon Play24}"
                                                Click="BtnStartClick" />
                                 </Grid>
+                                <TextBlock x:Name="ManualTranslationHint" Visibility="Collapsed"
+                                           Text="复制程序生成的提示词到任意 AI，再将完整回复粘贴回来。无需 API Key 或浏览器驱动；使用设置页中的 AI 提示词。"
+                                           Style="{StaticResource FieldHintStyle}" Margin="0,12,0,0" />
                             </StackPanel>
                         </ui:Card>
 
                         <ui:Card x:Name="TranslationUtilitiesCard" Margin="0,16,0,0" Padding="24">
                             <StackPanel>
-                                <TextBlock Text="自动翻译只处理新增、缺失、空译文以及手动标记的待重译条目；其他已有译文始终保留。"
+                                <TextBlock Text="翻译只处理新增、缺失、空译文以及手动标记的待重译条目；其他已有译文始终保留。"
                                            Style="{StaticResource FieldHintStyle}" Margin="0,0,0,14" />
                                 <TextBlock x:Name="ProjectLocationTextBlock" TextWrapping="Wrap" Opacity="0.68" />
                             </StackPanel>
@@ -406,7 +409,7 @@
                         <ui:Card Margin="0,16,0,0" Padding="24">
                             <StackPanel>
                                 <TextBlock Text="AI 翻译" Style="{StaticResource SectionTitleStyle}" />
-                                <TextBlock Text="配置兼容 OpenAI API 格式的服务地址、密钥、模型和提示词。"
+                                <TextBlock Text="API 模式需配置服务地址、密钥和模型。提示词供 API、DeepSeek 网页和手动 AI 翻译共用。"
                                            Style="{StaticResource PageDescriptionStyle}" />
 
                                 <Grid Margin="0,20,0,0">

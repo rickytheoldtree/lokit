@@ -43,6 +43,7 @@ namespace LocalizationTranslationWPF.Data
             DeepSeekWithDeepThinking,
             AIApi,
             DeepL,
+            ManualAI,
         }
 
         public enum TargetLangAmount
