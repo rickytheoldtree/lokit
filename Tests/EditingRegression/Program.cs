@@ -652,7 +652,11 @@ internal static partial class Program
             True(Read(Target(project, "English")).ContainsKey("fixed"));
             WpfJsonMerge(window, project);
             WpfManualTranslation(window);
-            Invoke(window, "SetProject", null); Pump();
+            // Switching projects inside a project action must not leave the project menu disabled afterwards.
+            typeof(MainWindow).GetMethod("BtnCloseProjectClick", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(window, new object?[] { null, new RoutedEventArgs() });
+            PumpUntil(() => ProjectContext.Current == null);
+            True(Control<ButtonBase>(window, "BtnProjectActions").IsEnabled);
             True(!Control<ButtonBase>(window, "BtnAddNewRow").IsEnabled);
         }
         finally

@@ -85,7 +85,7 @@ namespace LocalizationTranslationWPF
                 ShowSnackbar("项目已创建", "新增和编辑保存到工作副本，发布时才写回正式目录。", ControlAppearance.Success, SymbolRegular.CheckmarkCircle24);
             }
             catch (Exception error) { ShowInfoBar("创建项目失败", error.Message, InfoBarSeverity.Error); }
-            finally { isProjectActionActive = false; }
+            finally { isProjectActionActive = false; UpdateProjectUi(); }
         }
 
         private static void AddProjectField(Panel panel, string label, UIElement element)
@@ -105,7 +105,7 @@ namespace LocalizationTranslationWPF
                 if (dialog.ShowDialog(this) == true) SetProject(ProjectWorkspace.Open(dialog.FileName));
             }
             catch (Exception error) { ShowInfoBar("打开项目失败", error.Message, InfoBarSeverity.Error); }
-            finally { isProjectActionActive = false; }
+            finally { isProjectActionActive = false; UpdateProjectUi(); }
         }
 
         private async void BtnCloseProjectClick(object sender, RoutedEventArgs e)
@@ -113,7 +113,7 @@ namespace LocalizationTranslationWPF
             if (cts != null || isProjectActionActive) return;
             isProjectActionActive = true;
             try { if (await ResolveProjectEditsAsync("关闭项目")) SetProject(null); }
-            finally { isProjectActionActive = false; }
+            finally { isProjectActionActive = false; UpdateProjectUi(); }
         }
 
         private async Task<bool> ResolveProjectEditsAsync(string action) =>
@@ -287,7 +287,7 @@ namespace LocalizationTranslationWPF
                 LogUtils.Log($"发布备份：{backup}");
             }
             catch (Exception error) { ShowInfoBar("发布失败", error.Message, InfoBarSeverity.Error); }
-            finally { isProjectActionActive = false; }
+            finally { isProjectActionActive = false; UpdateProjectUi(); }
         }
 
         private async void BtnRestorePublishClick(object sender, RoutedEventArgs e)
@@ -310,7 +310,7 @@ namespace LocalizationTranslationWPF
                 ShowSnackbar("已恢复正式文件", "工作副本保持不变，可继续编辑或重新发布。", ControlAppearance.Success, SymbolRegular.ArrowCounterclockwise24);
             }
             catch (Exception error) { ShowInfoBar("恢复失败", error.Message, InfoBarSeverity.Error); }
-            finally { isProjectActionActive = false; }
+            finally { isProjectActionActive = false; UpdateProjectUi(); }
         }
     }
 }
