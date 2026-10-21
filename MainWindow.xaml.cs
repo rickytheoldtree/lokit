@@ -110,6 +110,7 @@ namespace LocalizationTranslationWPF
             TextBoxModel.Text = ConfigUtils.AIModel.Value;
             TextBoxPrompt.Text = ConfigUtils.AIPrompt.Value;
             TextBoxDriverProxy.Text = ConfigUtils.DriverProxy.Value;
+            InitUpdate();
             UpdateStartButtonState();
         }
 

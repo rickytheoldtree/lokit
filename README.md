@@ -60,15 +60,27 @@
 
 ### 浏览器驱动
 
-网页翻译通过 Selenium 工作。程序使用 Selenium Manager 下载与本机浏览器匹配的驱动，并缓存到 `data/web-drivers`。
+网页翻译通过 Selenium 工作。程序使用 Selenium Manager 下载与本机浏览器匹配的驱动，并缓存到数据目录的 `web-drivers`。
 
 - 设置页「浏览器」默认为「自动」，优先选择本机 Edge，也可以手动指定。
 - 网络受限时可填写「驱动代理」，例如 `http://127.0.0.1:7890`。
-- 也可以把对应的 `msedgedriver.exe` / `chromedriver.exe` / `geckodriver.exe` 放入 `data/web-drivers`，下载失败时会回退使用。
+- 也可以把对应的 `msedgedriver.exe` / `chromedriver.exe` / `geckodriver.exe` 放入数据目录的 `web-drivers`，下载失败时会回退使用。
 
 ### 语言规则与转换器
 
-`data/iso` 中每个文本文件是一组语言规则，每行格式为 `文件名,ISO代码`，例如 `English,en` 对应正式目录中的 `English.json`。转换器实现 `IDictConverter` 接口，扩展 DLL 放在 `data/converters`；接口由解决方案单独生成 `IDictConverter.dll`，发布包中会一起提供。
+数据目录 `iso` 中每个文本文件是一组语言规则，每行格式为 `文件名,ISO代码`，例如 `English,en` 对应正式目录中的 `English.json`。转换器实现 `IDictConverter` 接口，扩展 DLL 放在数据目录的 `converters`；接口由解决方案单独生成 `IDictConverter.dll`，发布包中会一起提供。
+
+## 安装与更新
+
+从 [GitHub Releases](https://github.com/rickytheoldtree/game-json-localization-wpf/releases) 下载 `Setup.exe` 安装，或下载 `Portable.zip` 解压使用。启动时会自动检查更新，也可以在「设置 → 更新与数据」手动检查；更新前会先处理未保存的表格编辑。
+
+数据目录保存配置、`iso`、`converters` 和浏览器驱动，更新不会覆盖：
+
+- 安装版：`%AppData%\LocalizationTranslationWPF`，卸载后仍保留。
+- 便携版：解压目录下的 `data`。
+- 直接运行编译输出（开发调试）：工作目录下的 `data`，不支持自动更新。
+
+从旧的压缩包版本升级时，在「设置 → 更新与数据 → 旧版本数据」选择旧程序旁的 `data` 文件夹，重启后导入配置、ISO 和格式转换器。
 
 ## 构建与测试
 
@@ -78,10 +90,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
 
 该入口会依次检查代码格式、以“警告视为错误”构建整个解决方案，并运行数据与 WPF 界面回归；只需在无桌面的环境验证数据逻辑时可追加 `-SkipUi`。
 
-发布命令：
+## 发布新版本
+
+发布通过 [Velopack](https://github.com/velopack/velopack) 打包并上传到 GitHub Releases，已安装的客户端会自动发现新版本：
 
 ```powershell
-dotnet publish LocalizationTranslationWPF.csproj -c Release -r win-x64 --self-contained false -o release/project-workflow-win-x64
+.\release.bat 1.2.0 release-notes.md
 ```
+
+- 第一个参数是版本号（必须比上一版大），第二个参数是可选的 Markdown 更新说明，会显示在客户端的更新弹窗里。
+- 需要先 `gh auth login`，或设置环境变量 `GITHUB_TOKEN`。打包工具 `vpk` 的版本固定在 `.config/dotnet-tools.json`，升级 Velopack NuGet 包时要同步修改。
+- 脚本会下载上一版以生成增量包，打包完成后询问是否上传；选否时安装包留在 `release/velopack`，可以先本地试装。
+- 产物包括 `LocalizationTranslationWPF-win-Setup.exe`（安装版，缺少 .NET 8 桌面运行时会自动安装）和 `LocalizationTranslationWPF-win-Portable.zip`（便携版）。
 
 回归范围与隔离规则见 [测试说明](Tests/EditingRegression/README.md)。

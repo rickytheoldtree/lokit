@@ -497,6 +497,64 @@
                                 </Grid>
                             </StackPanel>
                         </ui:Card>
+
+                        <ui:Card Margin="0,16,0,0" Padding="24">
+                            <StackPanel>
+                                <TextBlock Text="更新与数据" Style="{StaticResource SectionTitleStyle}" />
+                                <TextBlock Text="从 GitHub 获取新版本；配置、ISO 和格式转换器保存在数据目录，更新时不会丢失。"
+                                           Style="{StaticResource PageDescriptionStyle}" />
+
+                                <Grid Margin="0,20,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="14" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="14" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="版本"
+                                               VerticalAlignment="Center" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="UpdateStatusText"
+                                               Grid.Row="0" Grid.Column="1"
+                                               VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <ui:Button x:Name="BtnUpdate"
+                                               Grid.Row="0" Grid.Column="3"
+                                               Content="检查更新"
+                                               Icon="{ui:SymbolIcon ArrowSync24}"
+                                               Click="BtnUpdateClick" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="数据目录"
+                                               VerticalAlignment="Center" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="DataPathText"
+                                               Grid.Row="2" Grid.Column="1"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                    <ui:Button x:Name="BtnOpenData"
+                                               Grid.Row="2" Grid.Column="3"
+                                               Content="打开"
+                                               Icon="{ui:SymbolIcon FolderOpen24}"
+                                               Click="BtnOpenDataClick" />
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="旧版本数据"
+                                               VerticalAlignment="Center" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1"
+                                               Text="选择旧版本程序旁的 data 文件夹，导入配置、ISO 和格式转换器，重启后生效。"
+                                               VerticalAlignment="Center" Margin="0"
+                                               Style="{StaticResource FieldHintStyle}" />
+                                    <ui:Button x:Name="BtnImportData"
+                                               Grid.Row="4" Grid.Column="3"
+                                               Content="导入…"
+                                               Icon="{ui:SymbolIcon ArrowImport24}"
+                                               Click="BtnImportDataClick" />
+                                </Grid>
+                            </StackPanel>
+                        </ui:Card>
                     </StackPanel>
                 </Grid>
             </ScrollViewer>

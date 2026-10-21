@@ -55,6 +55,8 @@ internal static partial class Program
         Run("New and explicitly marked old keys translate together with per-language retry state", ForcedRetranslation);
         Run("Bulk paste batches validation and state notifications", BulkPaste);
         if (args.Contains("--ui")) Run("WPF project, add, edit, translation and publish preview workflow", WpfSmoke);
+        //会切换全局数据目录，必须最后运行
+        Run("Installed data folder seeds bundled files and applies legacy imports on next start", InstalledDataFolder);
         ProjectContext.Current = null;
         ConfigUtils.FlushPendingSave();
         Console.WriteLine($"RESULT: {passed} passed, {failed} failed");
@@ -418,6 +420,35 @@ internal static partial class Program
         Equal(0, project.PendingRetranslationCount);
         Equal("Corrigé {0}", project.ReadLanguage("French")["base"]);
         True(!Read(Target(project, "ChineseSimplified")).ContainsKey("new"));
+    }
+
+    private static void InstalledDataFolder()
+    {
+        var legacy = Path.Combine(Environment.CurrentDirectory, "legacy-app");
+        Directory.CreateDirectory(Path.Combine(legacy, "data", "iso"));
+        Directory.CreateDirectory(Path.Combine(legacy, "data", "web-drivers"));
+        File.WriteAllText(Path.Combine(legacy, "data", "config.json"), "legacy");
+        File.WriteAllText(Path.Combine(legacy, "data", "iso", "Game.txt"), "English,en");
+        File.WriteAllText(Path.Combine(legacy, "data", "web-drivers", "chromedriver.exe"), "driver");
+
+        var installed = Path.Combine(Environment.CurrentDirectory, "installed-data");
+        PathUtils.UseDataPath(installed);
+        True(File.Exists(Path.Combine(PathUtils.IsoPath, "Example.txt")));
+        File.WriteAllText(Path.Combine(PathUtils.IsoPath, "Example.txt"), "edited");
+        File.WriteAllText(PathUtils.ConfigPath, "current");
+
+        Throws<InvalidOperationException>(() => PathUtils.StageImport(Path.Combine(legacy, "missing")));
+        Throws<InvalidOperationException>(() => PathUtils.StageImport(installed));
+        //选中程序目录而不是 data 本身也能识别
+        Equal(2, PathUtils.StageImport(legacy));
+        Equal("current", File.ReadAllText(PathUtils.ConfigPath));
+
+        PathUtils.UseDataPath(installed);
+        Equal("legacy", File.ReadAllText(PathUtils.ConfigPath));
+        True(File.Exists(Path.Combine(PathUtils.IsoPath, "Game.txt")));
+        Equal("edited", File.ReadAllText(Path.Combine(PathUtils.IsoPath, "Example.txt")));
+        True(!File.Exists(Path.Combine(PathUtils.DriverPath, "chromedriver.exe")));
+        True(!Directory.Exists(Path.Combine(installed, "pending-import")));
     }
 
     private static void BulkPaste()
