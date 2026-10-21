@@ -1,4 +1,4 @@
-﻿namespace LocalizationTranslationWPF.Data
+﻿namespace Lokit.Data
 {
 #pragma warning disable CA1051 // The public field is part of the persisted language mapping format.
 

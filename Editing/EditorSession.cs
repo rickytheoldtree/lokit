@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Data;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.Projects;
+using Lokit.Data;
+using Lokit.Projects;
 
-namespace LocalizationTranslationWPF.Editing
+namespace Lokit.Editing
 {
     /// <summary>A language editor bound to a project snapshot, with no file paths or controls.</summary>
     public sealed class EditorSession : IDisposable

@@ -1,0 +1,40 @@
+# 推送 v* 标签时测试、打包并发布到 GitHub Releases，例如：
+#   git tag v1.2.0
+#   git push origin v1.2.0
+# 更新说明放在 release-notes/<版本号>.md（可选），会显示在客户端的更新弹窗里。
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Lokit.sln
+
+      # 界面回归需要可交互桌面，CI 上只跑格式、严格构建和数据回归
+      - name: Verify
+        shell: pwsh
+        run: ./scripts/verify.ps1 -SkipUi
+
+      - name: Pack and upload
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/release.ps1 -Version ('${{ github.ref_name }}'.TrimStart('v')) -Upload

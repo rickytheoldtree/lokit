@@ -1,10 +1,10 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using LocalizationTranslationWPF.Navigation;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Navigation;
+using Lokit.Utils;
 using Wpf.Ui.Controls;
 
-namespace LocalizationTranslationWPF
+namespace Lokit
 {
     public partial class MainWindow
     {

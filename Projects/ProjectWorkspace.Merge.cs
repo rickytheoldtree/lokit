@@ -1,10 +1,10 @@
 ﻿using System.IO;
 using System.Text;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace LocalizationTranslationWPF.Projects
+namespace Lokit.Projects
 {
     public sealed partial class ProjectWorkspace
     {

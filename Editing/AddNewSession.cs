@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Data;
-using LocalizationTranslationWPF.Projects;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Projects;
+using Lokit.Utils;
 
-namespace LocalizationTranslationWPF.Editing
+namespace Lokit.Editing
 {
     /// <summary>
     /// 待新增键值的编辑会话。负责校验、筛选和持久化，不引用 WPF 控件或剪贴板。

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace LocalizationTranslationWPF.Utils
+namespace Lokit.Utils
 {
     public static class IOUtils
     {

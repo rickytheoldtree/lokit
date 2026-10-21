@@ -1,13 +1,13 @@
-<ui:FluentWindow x:Class="LocalizationTranslationWPF.MainWindow"
+<ui:FluentWindow x:Class="Lokit.MainWindow"
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                 xmlns:local="clr-namespace:LocalizationTranslationWPF"
-                 xmlns:pages="clr-namespace:LocalizationTranslationWPF.Navigation"
+                 xmlns:local="clr-namespace:Lokit"
+                 xmlns:pages="clr-namespace:Lokit.Navigation"
                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  mc:Ignorable="d"
-                 Title="本地化工具"
+                 Title="Lokit"
                  MinWidth="900" MinHeight="640" Width="1180" Height="800"
                  WindowStartupLocation="CenterScreen"
                  ExtendsContentIntoTitleBar="True"
@@ -573,12 +573,11 @@
 
         <ui:TitleBar x:Name="MainTitleBar" Grid.Row="0" Title="" ShowMaximize="True">
             <ui:TitleBar.Icon>
-                <ui:SymbolIcon Symbol="Translate24" FontSize="16"
-                               Foreground="{DynamicResource AccentFillColorDefaultBrush}" />
+                <ui:ImageIcon Source="pack://application:,,,/Lokit;component/Assets/lokit-small.png" Width="16" Height="16" />
             </ui:TitleBar.Icon>
             <ui:TitleBar.Header>
                 <StackPanel Orientation="Horizontal" Margin="0,0,36,0" VerticalAlignment="Center">
-                    <TextBlock Text="本地化工具" FontSize="13" FontWeight="SemiBold"
+                    <TextBlock Text="Lokit" FontSize="13" FontWeight="SemiBold"
                                VerticalAlignment="Center" />
                     <Ellipse x:Name="TitleBarDirtyIndicator"
                              Width="6" Height="6" Margin="8,0,0,0"

@@ -1,4 +1,4 @@
-﻿namespace LocalizationTranslationWPF.DictConverter
+﻿namespace Lokit.DictConverter
 {
 #pragma warning disable CA1051 // The public field is part of the persisted converter descriptor.
 

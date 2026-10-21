@@ -1,11 +1,11 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Projects;
-using LocalizationTranslationWPF.Utils;
-using static LocalizationTranslationWPF.Data.Config;
+using Lokit.DictConverter;
+using Lokit.Projects;
+using Lokit.Utils;
+using static Lokit.Data.Config;
 
-namespace LocalizationTranslationWPF
+namespace Lokit
 {
     public partial class MainWindow
     {

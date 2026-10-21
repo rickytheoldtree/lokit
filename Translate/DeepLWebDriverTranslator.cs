@@ -1,11 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 using System.Text;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Data;
+using Lokit.DictConverter;
+using Lokit.Utils;
 using OpenQA.Selenium;
 
-namespace LocalizationTranslationWPF.Translate
+namespace Lokit.Translate
 {
     public class DeepLWebDriverTranslator : WebDriverTranslator
     {

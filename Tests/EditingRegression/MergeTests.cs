@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using LocalizationTranslationWPF.Projects;
+using Lokit.Projects;
 using Newtonsoft.Json.Linq;
 
 internal static partial class Program

@@ -2,14 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <DataTemplate x:Key="AppLogoTemplate">
-        <Viewbox Stretch="Uniform">
-            <Border Width="32" Height="32" CornerRadius="9"
-                    Background="{DynamicResource AccentFillColorDefaultBrush}">
-                <ui:SymbolIcon Symbol="Translate24"
-                               Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" />
-            </Border>
-        </Viewbox>
+        <Image Source="pack://application:,,,/Lokit;component/Assets/lokit.png" Stretch="Uniform"
+               RenderOptions.BitmapScalingMode="HighQuality" />
     </DataTemplate>
 
     <Style x:Key="PageTitleStyle" TargetType="TextBlock"

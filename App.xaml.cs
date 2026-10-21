@@ -1,8 +1,8 @@
 ﻿using System.Windows;
 
-using LocalizationTranslationWPF.Utils;
+using Lokit.Utils;
 
-namespace LocalizationTranslationWPF
+namespace Lokit
 {
     /// <summary>
     /// Interaction logic for App.xaml

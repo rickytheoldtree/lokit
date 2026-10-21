@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using LocalizationTranslationWPF.Data;
+using Lokit.Data;
 
-namespace LocalizationTranslationWPF.Utils
+namespace Lokit.Utils
 {
     public static class PairUtils
     {

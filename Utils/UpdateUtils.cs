@@ -4,16 +4,16 @@ using Velopack;
 using Velopack.Locators;
 using Velopack.Sources;
 
-namespace LocalizationTranslationWPF.Utils
+namespace Lokit.Utils
 {
     /// <summary>
     /// 通过 Velopack 从 GitHub Releases 检查和安装更新。只有用安装包或便携包运行时才可用。
     /// </summary>
     public static class UpdateUtils
     {
-        public const string RepositoryUrl = "https://github.com/rickytheoldtree/game-json-localization-wpf";
+        public const string RepositoryUrl = "https://github.com/rickytheoldtree/lokit";
         public const string ReleasesUrl = RepositoryUrl + "/releases";
-        private const string AppDataFolderName = "LocalizationTranslationWPF";
+        private const string AppDataFolderName = "Lokit";
 
         private static UpdateManager Manager => manager ??= new UpdateManager(new GithubSource(RepositoryUrl, null, false));
         private static UpdateManager? manager;
@@ -36,6 +36,12 @@ namespace LocalizationTranslationWPF.Utils
             if (Manager.IsPortable && VelopackLocator.Current.RootAppDir is { } root) return Path.Combine(root, "data");
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppDataFolderName);
         }
+
+        /// <summary>
+        /// 改名为 Lokit 之前的安装版数据目录
+        /// </summary>
+        public static string LegacyDataPath =>
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LocalizationTranslationWPF");
 
         public static Task<UpdateInfo?> CheckAsync() => Manager.CheckForUpdatesAsync();
 

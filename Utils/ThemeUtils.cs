@@ -2,9 +2,9 @@
 using System.Windows.Interop;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
-using static LocalizationTranslationWPF.Data.Config;
+using static Lokit.Data.Config;
 
-namespace LocalizationTranslationWPF.Utils;
+namespace Lokit.Utils;
 
 public static class ThemeUtils
 {

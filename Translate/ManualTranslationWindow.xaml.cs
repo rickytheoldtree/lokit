@@ -1,10 +1,10 @@
 ﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Utils;
 using Wpf.Ui.Controls;
 
-namespace LocalizationTranslationWPF.Translate;
+namespace Lokit.Translate;
 
 public partial class ManualTranslationWindow : FluentWindow
 {

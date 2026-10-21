@@ -1,14 +1,14 @@
 ﻿using System.Globalization;
 using System.IO;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Utils;
 using Microsoft.Win32;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
-using static LocalizationTranslationWPF.Data.Config;
+using static Lokit.Data.Config;
 
-namespace LocalizationTranslationWPF.Translate
+namespace Lokit.Translate
 {
     /// <summary>
     /// 负责让使用者完全不用关心 WebDriver：

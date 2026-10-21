@@ -1,4 +1,4 @@
-﻿namespace LocalizationTranslationWPF.Utils
+﻿namespace Lokit.Utils
 {
     public static class TaskUtils
     {

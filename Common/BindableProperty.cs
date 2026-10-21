@@ -1,4 +1,4 @@
-﻿namespace LocalizationTranslationWPF.Common
+﻿namespace Lokit.Common
 {
     public class BindableProperty<T>
     {

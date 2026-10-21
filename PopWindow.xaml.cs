@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Threading;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Utils;
 
-namespace LocalizationTranslationWPF;
+namespace Lokit;
 
 public partial class PopWindow : Wpf.Ui.Controls.FluentWindow
 {

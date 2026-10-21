@@ -2,12 +2,12 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Data;
+using Lokit.DictConverter;
+using Lokit.Utils;
 using Newtonsoft.Json;
 
-namespace LocalizationTranslationWPF.Projects
+namespace Lokit.Projects
 {
     public sealed partial class ProjectWorkspace
     {
@@ -83,6 +83,9 @@ namespace LocalizationTranslationWPF.Projects
             Validate(data);
             var converterType = DictConverterUtils.Converters.Select(c => c.type)
                 .FirstOrDefault(t => t?.FullName == data.ConverterType)
+                // 改名为 Lokit 之前创建的项目里，内置转换器的命名空间还是旧名字
+                ?? DictConverterUtils.Converters.Select(c => c.type).FirstOrDefault(t =>
+                    t?.FullName == ConfigUtils.RenameLegacyNamespace(data.ConverterType))
                 ?? throw new InvalidDataException($"缺少转换器 {data.ConverterType}，请先安装对应 DLL。");
             return new ProjectWorkspace(path, data, converterType, Hash(bytes));
         }

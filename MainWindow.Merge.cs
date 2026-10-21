@@ -1,15 +1,15 @@
 ﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using LocalizationTranslationWPF.Editing;
-using LocalizationTranslationWPF.Projects;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Editing;
+using Lokit.Projects;
+using Lokit.Utils;
 using Microsoft.Win32;
 using Wpf.Ui.Controls;
 using ComboBox = System.Windows.Controls.ComboBox;
 using TextBlock = System.Windows.Controls.TextBlock;
 
-namespace LocalizationTranslationWPF
+namespace Lokit
 {
     public partial class MainWindow
     {

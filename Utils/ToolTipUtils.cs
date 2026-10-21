@@ -1,6 +1,6 @@
-﻿using LocalizationTranslationWPF.DictConverter;
+﻿using Lokit.DictConverter;
 
-namespace LocalizationTranslationWPF.Utils
+namespace Lokit.Utils
 {
     public static class ToolTipUtils
     {

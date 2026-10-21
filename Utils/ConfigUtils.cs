@@ -1,12 +1,13 @@
 ﻿using System.IO;
-using LocalizationTranslationWPF.Common;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Projects;
+using System.Text.RegularExpressions;
+using Lokit.Common;
+using Lokit.Data;
+using Lokit.DictConverter;
+using Lokit.Projects;
 using Newtonsoft.Json;
-using static LocalizationTranslationWPF.Data.Config;
+using static Lokit.Data.Config;
 
-namespace LocalizationTranslationWPF.Utils
+namespace Lokit.Utils
 {
     public static class ConfigUtils
     {
@@ -156,7 +157,8 @@ namespace LocalizationTranslationWPF.Utils
 
             try
             {
-                var loaded = JsonConvert.DeserializeObject<Config>(File.ReadAllText(PathUtils.ConfigPath)) ??
+                var loaded = JsonConvert.DeserializeObject<Config>(
+                                 MigrateLegacyTypeNames(File.ReadAllText(PathUtils.ConfigPath))) ??
                              new Config();
                 // 旧版本把提示文字当作默认密钥写进配置，既会显示成一串圆点，也会错误通过必填校验。
                 if (loaded.aiAPIKey == "输入你的apikey")
@@ -172,5 +174,21 @@ namespace LocalizationTranslationWPF.Utils
                 return new Config();
             }
         }
+
+        //改名为 Lokit 之前，程序集和内置类型的命名空间都叫这个
+        private const string LegacyName = "LocalizationTranslationWPF";
+
+        public static string RenameLegacyNamespace(string typeName) =>
+            typeName.StartsWith(LegacyName + ".", StringComparison.Ordinal)
+                ? "Lokit" + typeName[LegacyName.Length..]
+                : typeName;
+
+        /// <summary>
+        /// 配置里的转换器类型带着程序集名，旧程序集已不存在，不改写会让整份配置读取失败。
+        /// 外部 DLL 里的转换器属于别的程序集，不受影响。
+        /// </summary>
+        public static string MigrateLegacyTypeNames(string json) =>
+            Regex.Replace(json, "\"([\\w.+]+), " + LegacyName + ",",
+                match => $"\"{RenameLegacyNamespace(match.Groups[1].Value)}, Lokit,");
     }
 }

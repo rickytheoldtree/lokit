@@ -2,9 +2,9 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
-using LocalizationTranslationWPF;
-using LocalizationTranslationWPF.Editing;
-using LocalizationTranslationWPF.Projects;
+using Lokit;
+using Lokit.Editing;
+using Lokit.Projects;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
 using ComboBox = System.Windows.Controls.ComboBox;

@@ -9,13 +9,13 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DictConverter;
-using LocalizationTranslationWPF;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.Editing;
-using LocalizationTranslationWPF.Navigation;
-using LocalizationTranslationWPF.Projects;
-using LocalizationTranslationWPF.Translate;
-using LocalizationTranslationWPF.Utils;
+using Lokit;
+using Lokit.Data;
+using Lokit.Editing;
+using Lokit.Navigation;
+using Lokit.Projects;
+using Lokit.Translate;
+using Lokit.Utils;
 
 internal static partial class Program
 {
@@ -54,6 +54,7 @@ internal static partial class Program
         Run("Project validation rejects traversal/duplicate names and bad source files", InvalidProjects);
         Run("New and explicitly marked old keys translate together with per-language retry state", ForcedRetranslation);
         Run("Bulk paste batches validation and state notifications", BulkPaste);
+        Run("Config and projects saved before the Lokit rename still load", LegacyTypeNames);
         if (args.Contains("--ui")) Run("WPF project, add, edit, translation and publish preview workflow", WpfSmoke);
         //会切换全局数据目录，必须最后运行
         Run("Installed data folder seeds bundled files and applies legacy imports on next start", InstalledDataFolder);
@@ -449,6 +450,32 @@ internal static partial class Program
         Equal("edited", File.ReadAllText(Path.Combine(PathUtils.IsoPath, "Example.txt")));
         True(!File.Exists(Path.Combine(PathUtils.DriverPath, "chromedriver.exe")));
         True(!Directory.Exists(Path.Combine(installed, "pending-import")));
+
+        //改名前的安装版数据只在新目录第一次创建时自动导入
+        var renamed = Path.Combine(Environment.CurrentDirectory, "renamed-data");
+        PathUtils.UseDataPath(renamed, Path.Combine(legacy, "data"));
+        Equal("legacy", File.ReadAllText(PathUtils.ConfigPath));
+        File.WriteAllText(PathUtils.ConfigPath, "changed");
+        PathUtils.UseDataPath(renamed, Path.Combine(legacy, "data"));
+        Equal("changed", File.ReadAllText(PathUtils.ConfigPath));
+    }
+
+    private static void LegacyTypeNames()
+    {
+        const string json = "{\"dictConverter\":{\"type\":\"DictConverter.DefaultConverter, LocalizationTranslationWPF, " +
+                            "Version=1.0.0.0, Culture=neutral, PublicKeyToken=null\"}," +
+                            "\"builtIn\":\"LocalizationTranslationWPF.DictConverter.ExampleAdditionalConverter, LocalizationTranslationWPF, Version=1.0.0.0\"," +
+                            "\"external\":\"LocalizationTranslationWPF.DictConverter.TripeaksFarmConverter, SampleDictConverter\"}";
+        var migrated = ConfigUtils.MigrateLegacyTypeNames(json);
+        Equal(typeof(DefaultConverter), Newtonsoft.Json.JsonConvert.DeserializeObject<Config>(migrated)!.dictConverter.type);
+        True(migrated.Contains("\"Lokit.DictConverter.ExampleAdditionalConverter, Lokit, Version=1.0.0.0\""));
+        True(migrated.Contains("\"LocalizationTranslationWPF.DictConverter.TripeaksFarmConverter, SampleDictConverter\""));
+
+        var project = CreateProject();
+        var document = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(project.FilePath));
+        document["ConverterType"] = "LocalizationTranslationWPF.DictConverter.ExampleAdditionalConverter";
+        File.WriteAllText(project.FilePath, document.ToString());
+        Equal(typeof(Lokit.DictConverter.ExampleAdditionalConverter), ProjectWorkspace.Open(project.FilePath).ConverterType);
     }
 
     private static void BulkPaste()
@@ -478,7 +505,7 @@ internal static partial class Program
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(app.Dispatcher));
         app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary { Theme = Wpf.Ui.Appearance.ApplicationTheme.Light });
         app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
-        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/LocalizationTranslationWPF;component/Themes/AppStyles.xaml") });
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Lokit;component/Themes/AppStyles.xaml") });
         MainWindow? window = null;
         try
         {

@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Reflection;
 using DictConverter;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Utils;
 
-namespace LocalizationTranslationWPF.DictConverter
+namespace Lokit.DictConverter
 {
     public static class DictConverterUtils
     {

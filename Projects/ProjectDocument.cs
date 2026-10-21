@@ -1,6 +1,6 @@
-﻿using LocalizationTranslationWPF.Data;
+﻿using Lokit.Data;
 
-namespace LocalizationTranslationWPF.Projects
+namespace Lokit.Projects
 {
     public sealed class ProjectDocument
     {

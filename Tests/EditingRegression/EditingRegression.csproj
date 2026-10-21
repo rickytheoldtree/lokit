@@ -10,6 +10,6 @@
     <NoWarn>$(NoWarn);CA1861</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\LocalizationTranslationWPF.csproj" />
+    <ProjectReference Include="..\..\Lokit.csproj" />
   </ItemGroup>
 </Project>

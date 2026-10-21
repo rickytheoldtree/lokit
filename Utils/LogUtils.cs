@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace LocalizationTranslationWPF.Utils
+namespace Lokit.Utils
 {
     public enum LogLevel
     {

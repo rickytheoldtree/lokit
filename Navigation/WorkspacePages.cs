@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace LocalizationTranslationWPF.Navigation
+namespace Lokit.Navigation
 {
     // Distinct, retained page instances let NavigationView own routing without recreating edit sessions.
     // Their contents and event bindings are declared in MainWindow.xaml and held by PageStore.

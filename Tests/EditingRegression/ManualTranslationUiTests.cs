@@ -2,11 +2,11 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using LocalizationTranslationWPF;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.Projects;
-using LocalizationTranslationWPF.Translate;
-using LocalizationTranslationWPF.Utils;
+using Lokit;
+using Lokit.Data;
+using Lokit.Projects;
+using Lokit.Translate;
+using Lokit.Utils;
 
 internal static partial class Program
 {

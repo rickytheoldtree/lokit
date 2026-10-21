@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 
-namespace LocalizationTranslationWPF.Projects
+namespace Lokit.Projects
 {
     public sealed class LanguageSnapshot
     {

@@ -1,6 +1,6 @@
 ﻿using System.Data;
 
-namespace LocalizationTranslationWPF.Editing
+namespace Lokit.Editing
 {
     internal static class EditingTable
     {

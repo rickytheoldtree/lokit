@@ -2,11 +2,11 @@
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.Projects;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Data;
+using Lokit.Projects;
+using Lokit.Utils;
 
-namespace LocalizationTranslationWPF.Translate
+namespace Lokit.Translate
 {
     /// <summary>Owns source snapshots and persistence; providers never access language files.</summary>
     public static class TranslationJob

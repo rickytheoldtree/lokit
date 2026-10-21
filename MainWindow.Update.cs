@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Utils;
 using Microsoft.Win32;
 using Velopack;
 using Wpf.Ui.Controls;
 
-namespace LocalizationTranslationWPF
+namespace Lokit
 {
     public partial class MainWindow
     {

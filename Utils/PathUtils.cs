@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO;
 
-namespace LocalizationTranslationWPF.Utils
+namespace Lokit.Utils
 {
     public static class PathUtils
     {
@@ -36,10 +36,23 @@ namespace LocalizationTranslationWPF.Utils
         /// 安装版每次更新都会整体替换程序目录，所以数据放在别处。
         /// 必须在读取配置之前调用。
         /// </summary>
-        public static void UseDataPath(string dataPath)
+        /// <param name="legacyDataPath">改名前的数据目录，新目录第一次创建时自动导入</param>
+        public static void UseDataPath(string dataPath, string? legacyDataPath = null)
         {
+            var isFirstRun = !Directory.Exists(dataPath);
             DataPath = dataPath;
             Directory.CreateDirectory(DataPath);
+            if (isFirstRun && legacyDataPath != null && LooksLikeDataFolder(legacyDataPath))
+            {
+                try
+                {
+                    StageImport(legacyDataPath);
+                }
+                catch (Exception e)
+                {
+                    LogUtils.LogError($"导入旧版本数据失败：{e.Message}");
+                }
+            }
             ApplyPendingImport();
             //程序自带的示例文件只补缺，不覆盖用户改过的同名文件
             CopyDirectory(Path.Combine(AppContext.BaseDirectory, "data"), DataPath, false);

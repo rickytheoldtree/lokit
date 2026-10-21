@@ -7,16 +7,16 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Editing;
-using LocalizationTranslationWPF.Projects;
-using LocalizationTranslationWPF.Translate;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Data;
+using Lokit.DictConverter;
+using Lokit.Editing;
+using Lokit.Projects;
+using Lokit.Translate;
+using Lokit.Utils;
 using Wpf.Ui.Controls;
-using static LocalizationTranslationWPF.Data.Config;
+using static Lokit.Data.Config;
 
-namespace LocalizationTranslationWPF
+namespace Lokit
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -901,7 +901,7 @@ namespace LocalizationTranslationWPF
 
             var hasUnsavedChanges = editorSession.IsDirty || addNewSession.IsDirty;
             Title = (ProjectContext.Current?.Name is { } projectName ? projectName + " · " : "") +
-                (hasUnsavedChanges ? "本地化工具 · 未保存" : "本地化工具");
+                (hasUnsavedChanges ? "Lokit · 未保存" : "Lokit");
             TitleBarDirtyIndicator.Visibility = hasUnsavedChanges ? Visibility.Visible : Visibility.Hidden;
         }
 

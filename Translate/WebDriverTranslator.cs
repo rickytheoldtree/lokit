@@ -1,12 +1,12 @@
 ﻿using System.IO;
-using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.Utils;
+using Lokit.Data;
+using Lokit.Utils;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
 
-namespace LocalizationTranslationWPF.Translate;
+namespace Lokit.Translate;
 
 public abstract class WebDriverTranslator : IDisposable
 {

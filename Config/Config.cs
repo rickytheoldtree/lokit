@@ -1,9 +1,9 @@
-﻿using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Utils;
+﻿using Lokit.DictConverter;
+using Lokit.Utils;
 
 #pragma warning disable CA1051, CA1708, CA1720 // Names and fields are persisted in existing config.json files.
 
-namespace LocalizationTranslationWPF.Data
+namespace Lokit.Data
 {
     [Serializable]
     public class Config

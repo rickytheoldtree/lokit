@@ -2,9 +2,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using LocalizationTranslationWPF.Projects;
+using Lokit.Projects;
 
-namespace LocalizationTranslationWPF.Editing
+namespace Lokit.Editing
 {
     public partial class MergePreview : UserControl, IDisposable
     {

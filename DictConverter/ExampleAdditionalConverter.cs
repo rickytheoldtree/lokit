@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Newtonsoft.Json;
 
-namespace LocalizationTranslationWPF.DictConverter
+namespace Lokit.DictConverter
 {
     public class ExampleAdditionalConverter : IDictConverter.IDictConverter
     {

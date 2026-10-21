@@ -1,9 +1,9 @@
-﻿using LocalizationTranslationWPF.Data;
-using LocalizationTranslationWPF.DictConverter;
-using LocalizationTranslationWPF.Translate;
-using LocalizationTranslationWPF.Utils;
+﻿using Lokit.Data;
+using Lokit.DictConverter;
+using Lokit.Translate;
+using Lokit.Utils;
 
-namespace LocalizationTranslationWPF;
+namespace Lokit;
 
 public partial class MainWindow
 {

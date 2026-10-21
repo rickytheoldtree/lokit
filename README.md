@@ -1,4 +1,6 @@
-# 本地化工具
+<img src="Assets/lokit.png" width="96" alt="Lokit" />
+
+# Lokit 本地化工具箱
 
 基于 .NET 8 / WPF UI 的本地化编辑和翻译工具，统一使用 `.locproj` 项目工作副本。
 
@@ -72,15 +74,19 @@
 
 ## 安装与更新
 
-从 [GitHub Releases](https://github.com/rickytheoldtree/game-json-localization-wpf/releases) 下载 `Setup.exe` 安装，或下载 `Portable.zip` 解压使用。启动时会自动检查更新，也可以在「设置 → 更新与数据」手动检查；更新前会先处理未保存的表格编辑。
+从 [GitHub Releases](https://github.com/rickytheoldtree/lokit/releases) 下载 `Setup.exe` 安装，或下载 `Portable.zip` 解压使用。启动时会自动检查更新，也可以在「设置 → 更新与数据」手动检查；更新前会先处理未保存的表格编辑。
 
 数据目录保存配置、`iso`、`converters` 和浏览器驱动，更新不会覆盖：
 
-- 安装版：`%AppData%\LocalizationTranslationWPF`，卸载后仍保留。
+- 安装版：`%AppData%\Lokit`，卸载后仍保留。
 - 便携版：解压目录下的 `data`。
 - 直接运行编译输出（开发调试）：工作目录下的 `data`，不支持自动更新。
 
-从旧的压缩包版本升级时，在「设置 → 更新与数据 → 旧版本数据」选择旧程序旁的 `data` 文件夹，重启后导入配置、ISO 和格式转换器。
+从旧版本升级：
+
+- 改名前的安装版（「本地化工具」1.0.0）：直接安装 Lokit，首次启动会自动导入 `%AppData%\LocalizationTranslationWPF` 里的数据，然后可以在 Windows「应用」里卸载旧版。
+- 旧的压缩包版本：在「设置 → 更新与数据 → 旧版本数据」选择旧程序旁的 `data` 文件夹，重启后导入配置、ISO 和格式转换器。
+- 改名前创建的 `.locproj` 项目可以直接打开。
 
 ## 构建与测试
 
@@ -92,15 +98,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\verify.ps1
 
 ## 发布新版本
 
-发布通过 [Velopack](https://github.com/velopack/velopack) 打包并上传到 GitHub Releases，已安装的客户端会自动发现新版本：
+发布由 GitHub Actions（[release.yml](.github/workflows/release.yml)）完成：推送 `v*` 标签后，自动检查格式、严格构建、运行数据回归，再用 [Velopack](https://github.com/velopack/velopack) 打包并上传到 GitHub Releases，已安装的客户端会自动发现新版本。
 
 ```powershell
-.\release.bat 1.2.0 release-notes.md
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
-- 第一个参数是版本号（必须比上一版大），第二个参数是可选的 Markdown 更新说明，会显示在客户端的更新弹窗里。
-- 需要先 `gh auth login`，或设置环境变量 `GITHUB_TOKEN`。打包工具 `vpk` 的版本固定在 `.config/dotnet-tools.json`，升级 Velopack NuGet 包时要同步修改。
-- 脚本会下载上一版以生成增量包，打包完成后询问是否上传；选否时安装包留在 `release/velopack`，可以先本地试装。
-- 产物包括 `LocalizationTranslationWPF-win-Setup.exe`（安装版，缺少 .NET 8 桌面运行时会自动安装）和 `LocalizationTranslationWPF-win-Portable.zip`（便携版）。
+- 版本号必须比上一版大。可选的更新说明放在 `release-notes/<版本号>.md`（例如 `release-notes/1.2.0.md`），随标签一起提交，会显示在客户端的更新弹窗里。
+- 产物包括 `Lokit-win-Setup.exe`（安装版，缺少 .NET 8 桌面运行时会自动安装）和 `Lokit-win-Portable.zip`（便携版），以及给已安装客户端用的完整包和增量包。
+- 本地试装：`.\scripts\release.ps1 -Version 1.2.0` 只打包到 `release/velopack`，不上传；加 `-Upload` 可以在本地直接发布（需要 `gh auth login` 或 `GITHUB_TOKEN`）。
+- 打包工具 `vpk` 的版本固定在 `.config/dotnet-tools.json`，升级 Velopack NuGet 包时要同步修改。
 
 回归范围与隔离规则见 [测试说明](Tests/EditingRegression/README.md)。
