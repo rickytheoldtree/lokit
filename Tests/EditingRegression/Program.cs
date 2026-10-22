@@ -55,6 +55,7 @@ internal static partial class Program
         Run("New and explicitly marked old keys translate together with per-language retry state", ForcedRetranslation);
         Run("Bulk paste batches validation and state notifications", BulkPaste);
         Run("Config and projects saved before the Lokit rename still load", LegacyTypeNames);
+        Run("ISO tables are chosen by name, reload from disk and report bad lines once", IsoTables);
         if (args.Contains("--ui")) Run("WPF project, add, edit, translation and publish preview workflow", WpfSmoke);
         //会切换全局数据目录，必须最后运行
         Run("Installed data folder seeds bundled files and applies legacy imports on next start", InstalledDataFolder);
@@ -458,6 +459,55 @@ internal static partial class Program
         File.WriteAllText(PathUtils.ConfigPath, "changed");
         PathUtils.UseDataPath(renamed, Path.Combine(legacy, "data"));
         Equal("changed", File.ReadAllText(PathUtils.ConfigPath));
+    }
+
+    private static void IsoTables()
+    {
+        var folder = Path.Combine(Environment.CurrentDirectory, "iso-tables");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "b.txt"),
+            "# 注释,不是语言\r\nEnglish, en ,extra\r\n\r\nChinese HK,zh-TW\r\nenglish,en\r\nCON,fr\r\nBad\r\nKlingon,tlh_KL\r\n");
+        File.WriteAllText(Path.Combine(folder, "A.txt"), "French,fr");
+        File.WriteAllText(Path.Combine(folder, "Empty.txt"), "# nothing");
+        File.WriteAllText(Path.Combine(folder, "notes.bak"), "German,de");
+        var tables = PairUtils.LoadTables(folder, out var problems);
+        Equal("A,b", string.Join(",", tables.Select(t => t.Name)));
+        Equal("English:en,Chinese HK:zh-TW,Klingon:tlh_KL", string.Join(",", tables[1].Pairs.Select(p => $"{p.Name}:{p.isoCode}")));
+        True(problems.Any(p => p.Contains("b.txt 第 5 行", StringComparison.Ordinal) && p.Contains("重复", StringComparison.Ordinal)));
+        True(problems.Any(p => p.Contains("b.txt 第 6 行", StringComparison.Ordinal) && p.Contains("CON", StringComparison.Ordinal)));
+        True(problems.Any(p => p.Contains("b.txt 第 7 行", StringComparison.Ordinal)));
+        True(problems.Any(p => p.Contains("b.txt 第 8 行", StringComparison.Ordinal) && p.Contains("tlh_KL", StringComparison.Ordinal)));
+        True(problems.Any(p => p.Contains("Empty.txt", StringComparison.Ordinal)));
+        Equal(5, problems.Count);
+
+        //旧配置的序号按当时文件夹里所有文件的顺序换算，包括非 .txt 文件
+        Equal("b", PairUtils.LegacyTableName(folder, 1));
+        Equal("notes", PairUtils.LegacyTableName(folder, 3));
+        Equal<string?>(null, PairUtils.LegacyTableName(folder, 4));
+        Equal<string?>(null, PairUtils.LegacyTableName(folder, -1));
+        Equal<string?>(null, PairUtils.LegacyTableName(Path.Combine(folder, "missing"), 0));
+
+        var game = Path.Combine(PathUtils.IsoPath, "Game.txt");
+        try
+        {
+            File.WriteAllText(game, "English,en\nChineseSimplified,zh-CN\nGerman,de\nBad");
+            PairUtils.Reload();
+            Equal(3, PairUtils.GetPairs("game").Count);
+            //新增一份排在前面的表，按名字记住的选择不受影响，找不到的名字用第一份表
+            File.WriteAllText(Path.Combine(PathUtils.IsoPath, "Aaa.txt"), "English,en");
+            var logged = LogUtils.GetEntries().Count;
+            PairUtils.Reload();
+            Equal(3, PairUtils.GetPairs("Game").Count);
+            Equal("Aaa", PairUtils.ResolveTable("Removed")!.Name);
+            Equal(logged, LogUtils.GetEntries().Count);
+        }
+        finally
+        {
+            foreach (var file in Directory.GetFiles(PathUtils.IsoPath)) File.Delete(file);
+            PairUtils.Reload();
+        }
+        Equal<PairTable?>(null, PairUtils.ResolveTable("Game"));
+        Equal("English,ChineseSimplified", string.Join(",", PairUtils.GetPairs("Game").Select(p => p.Name)));
     }
 
     private static void LegacyTypeNames()

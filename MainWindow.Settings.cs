@@ -10,6 +10,7 @@ namespace Lokit
     public partial class MainWindow
     {
         private bool isInitializingApiKey;
+        private bool isRefreshingIsoTables;
 
         private void ThemeModeComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -42,12 +43,32 @@ namespace Lokit
 
         private void IsoPairComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (isSwitchingProject || ProjectContext.Current != null) return;
+            if (isSwitchingProject || isRefreshingIsoTables || ProjectContext.Current != null) return;
             if (!Equals(e.Source, IsoPairComboBox)) return;
-            if (IsoPairComboBox.SelectedIndex == -1) return;
+            if (IsoPairComboBox.SelectedItem is not PairTable table) return;
 
-            ConfigUtils.IsoPairIndex.Value = IsoPairComboBox.SelectedIndex;
+            ConfigUtils.IsoPairName.Value = table.Name;
             IsoPairComboBox.ToolTip = ToolTipUtils.IsoPairToolTip;
+        }
+
+        private void IsoPairComboBoxDropDownOpened(object sender, EventArgs e) => RefreshIsoTables();
+
+        /// <summary>
+        /// 重新读取 iso 文件夹并按表名恢复选择；记住的表被删掉时改用第一份表
+        /// </summary>
+        private void RefreshIsoTables()
+        {
+            PairUtils.Reload();
+            isRefreshingIsoTables = true;
+            try
+            {
+                IsoPairComboBox.ItemsSource = PairUtils.Tables;
+                IsoPairComboBox.SelectedItem = PairUtils.ResolveTable(ConfigUtils.IsoPairName.Value);
+            }
+            finally { isRefreshingIsoTables = false; }
+            if (ProjectContext.Current == null && IsoPairComboBox.SelectedItem is PairTable table &&
+                table.Name != ConfigUtils.IsoPairName.Value)
+                ConfigUtils.IsoPairName.Value = table.Name;
         }
 
         private void SourceLangComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)

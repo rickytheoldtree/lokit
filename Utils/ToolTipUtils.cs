@@ -24,7 +24,7 @@ namespace Lokit.Utils
             $"驱动由程序按浏览器版本自动下载并缓存到 {PathUtils.DriverPath}，无需手动准备。";
 
         public static string IsoPairToolTip =>
-            "示例：\nEnglish,en\nChineseSimplified,zh-CN\n创建项目时使用的语言文件名与 ISO 对应表；已打开项目的语言表保持固定。";
+            "示例：\nEnglish,en\nChineseSimplified,zh-CN\n创建项目时使用的语言文件名与 ISO 对应表，展开列表时重新读取 ISO 文件夹；已打开项目的语言表保持固定。";
 
         public static string SourceLangToolTip => "使用当前项目的源语言工作副本；源语言在创建项目时确定。";
 

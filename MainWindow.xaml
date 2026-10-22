@@ -1,4 +1,4 @@
-<ui:FluentWindow x:Class="Lokit.MainWindow"
+﻿<ui:FluentWindow x:Class="Lokit.MainWindow"
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:local="clr-namespace:Lokit"
@@ -395,7 +395,8 @@
                                     <ComboBox x:Name="IsoPairComboBox"
                                               Grid.Row="6" Grid.Column="1"
                                               Style="{StaticResource StandardComboBoxStyle}"
-                                              DisplayMemberPath="Key"
+                                              DisplayMemberPath="Name"
+                                              DropDownOpened="IsoPairComboBoxDropDownOpened"
                                               SelectionChanged="IsoPairComboBoxSelectionChanged" />
                                     <ui:Button x:Name="BtnOpenIso"
                                                Grid.Row="6" Grid.Column="3"

@@ -1,3 +1,5 @@
+# 每行一种语言：文件名 + 英文逗号 + ISO 代码；文件名对应正式目录中的 文件名.json
+# 翻译服务只区分简体和繁体中文，ChineseHK 用繁体的 zh-TW 即可
 English,en
 French,fr
 German,de

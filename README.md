@@ -70,7 +70,7 @@
 
 ### 语言规则与转换器
 
-数据目录 `iso` 中每个文本文件是一组语言规则，每行格式为 `文件名,ISO代码`，例如 `English,en` 对应正式目录中的 `English.json`。转换器实现 `IDictConverter` 接口，扩展 DLL 放在数据目录的 `converters`；接口由解决方案单独生成 `IDictConverter.dll`，发布包中会一起提供。
+数据目录 `iso` 中每个 `.txt` 文件是一组语言规则，每行格式为 `文件名,ISO代码`，例如 `English,en` 对应正式目录中的 `English.json`；空行和 `#` 开头的注释行会跳过。设置里展开语言规则列表或新建项目时会重新读取这个文件夹，不用重启；有问题的行会写进日志并注明文件和行号。转换器实现 `IDictConverter` 接口，扩展 DLL 放在数据目录的 `converters`；接口由解决方案单独生成 `IDictConverter.dll`，发布包中会一起提供。
 
 ## 安装与更新
 

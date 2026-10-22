@@ -31,14 +31,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="data\iso\CrossMath.txt" />
-    <None Remove="data\iso\ElderMahjong.txt" />
-    <None Remove="data\iso\GinRummy.txt" />
-    <None Remove="data\iso\GoodsSort.txt" />
-    <None Remove="data\iso\Mahjong.txt" />
-    <None Remove="data\iso\TripeakFarm.txt" />
-    <None Remove="data\iso\TripeaksDecor.txt" />
-    <None Remove="data\iso\WaterSort.txt" />
     <None Remove="README.md" />
   </ItemGroup>
 

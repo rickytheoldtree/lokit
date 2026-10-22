@@ -432,6 +432,16 @@ namespace Lokit.Projects
             return changes;
         }
 
+        /// <summary>
+        /// 语言名直接用作正式目录里的 JSON 文件名
+        /// </summary>
+        internal static bool IsUsableLanguageName(string? name) =>
+            !string.IsNullOrWhiteSpace(name) && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 &&
+            name is not ("." or "..") && !name.EndsWith('.') && !name.EndsWith(' ');
+
+        internal static bool IsReservedLanguageName(string name) =>
+            Regex.IsMatch(name, @"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)", RegexOptions.IgnoreCase);
+
         private static void Validate(ProjectDocument data)
         {
             if (data.Version != 1 || string.IsNullOrWhiteSpace(data.Id) || string.IsNullOrWhiteSpace(data.ConverterType) ||
@@ -441,13 +451,11 @@ namespace Lokit.Projects
             var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var language in data.Languages)
             {
-                if (language == null || string.IsNullOrWhiteSpace(language.Name) ||
-                    language.Name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ||
-                    language.Name is "." or ".." || language.Name.EndsWith('.') || language.Name.EndsWith(' ') ||
+                if (language == null || !IsUsableLanguageName(language.Name) ||
                     !names.Add(language.Name) || string.IsNullOrWhiteSpace(language.IsoCode) ||
                     language.Working == null || language.Baseline == null || language.RetranslateKeys == null)
                     throw new InvalidDataException("语言表包含无效或重复的文件名/语言配置。");
-                if (Regex.IsMatch(language.Name, @"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)", RegexOptions.IgnoreCase))
+                if (IsReservedLanguageName(language.Name))
                     throw new InvalidDataException("语言文件名不能使用 Windows 保留名称。");
                 if (language.Working.Values.Any(v => v == null) || language.Baseline.Values.Any(v => v == null))
                     throw new InvalidDataException("项目文本不能为 null。");

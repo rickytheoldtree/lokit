@@ -61,8 +61,6 @@ namespace Lokit
         {
             PathUtils.MakeSureFolderExist();
 
-            var isoIndex = ConfigUtils.IsoPairIndex.Value;
-
             isInitializingTheme = true;
             ThemeModeComboBox.ItemsSource = ThemeChoices;
             ThemeModeComboBox.SelectedIndex = Array.FindIndex(ThemeChoices,
@@ -79,12 +77,10 @@ namespace Lokit
             DictConverterComboBox.SelectedItem = new DictConverterType(ConfigUtils.DictConverter.Value);
             ToolTipService.SetInitialShowDelay(DictConverterComboBox, 0);
 
-            IsoPairComboBox.ItemsSource = PairUtils.PairsCache;
-            IsoPairComboBox.SelectedIndex = isoIndex >= PairUtils.PairsCache.Count ? 0 : isoIndex;
+            RefreshIsoTables();
             ToolTipService.SetInitialShowDelay(IsoPairComboBox, 0);
 
-            //IsoPairComboBox 的赋值可能把越界索引纠正回0，这里要用纠正后的值取语言表
-            var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairIndex.Value);
+            var pairs = PairUtils.GetPairs(ConfigUtils.IsoPairName.Value);
             SourceLangComboBox.ItemsSource = pairs;
             SourceLangComboBox.SelectedIndex = ConfigUtils.SourceLangIndex.Value;
             ToolTipService.SetInitialShowDelay(SourceLangComboBox, 0);

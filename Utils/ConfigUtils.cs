@@ -29,7 +29,7 @@ namespace Lokit.Utils
 
         public static BindableProperty<Type> DictConverter { get; } = new();
 
-        public static BindableProperty<int> IsoPairIndex { get; } = new();
+        public static BindableProperty<string> IsoPairName { get; } = new();
 
         public static BindableProperty<int> SourceLangIndex { get; } = new();
 
@@ -61,7 +61,13 @@ namespace Lokit.Utils
             Bind(WebDriver, Config.webDriverType, value => Config.webDriverType = value);
             Bind(DictConverter, DictConverterUtils.GetConverterType(Config.dictConverter.type),
                 value => Config.dictConverter = new DictConverterType(value));
-            Bind(IsoPairIndex, Config.isoPairIndex, value => Config.isoPairIndex = value);
+            //旧配置只记了序号，换算成表名马上写回，以后 iso 文件夹增删文件也不会选错表
+            if (Config.isoPairName == null)
+            {
+                Config.isoPairName = PairUtils.LegacyTableName(PathUtils.IsoPath, Config.isoPairIndex) ?? string.Empty;
+                ScheduleSave();
+            }
+            Bind(IsoPairName, Config.isoPairName, value => Config.isoPairName = value);
             Bind(TranslateMethod, Config.translateMethod, value => Config.translateMethod = value);
             Bind(TargetLangAmount, Config.targetLangAmount, value => Config.targetLangAmount = value);
             Bind(AppTheme, Enum.IsDefined(Config.appThemeMode) ? Config.appThemeMode : AppThemeMode.System,

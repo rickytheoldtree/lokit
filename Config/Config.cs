@@ -10,6 +10,14 @@ namespace Lokit.Data
     {
         public WebDriverType webDriverType = WebDriverType.Auto;
         public DictConverterType dictConverter;
+        /// <summary>
+        /// 选中的语言表名，null 表示还是旧版本的配置
+        /// </summary>
+        public string? isoPairName;
+
+        /// <summary>
+        /// 旧版本按序号记住语言表，只在 <see cref="isoPairName"/> 为 null 时用来换算表名
+        /// </summary>
         public int isoPairIndex;
         public TranslateMethod translateMethod;
         public TargetLangAmount targetLangAmount;

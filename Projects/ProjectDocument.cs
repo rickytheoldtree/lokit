@@ -85,6 +85,6 @@ namespace Lokit.Projects
     {
         public static ProjectWorkspace? Current { get; set; }
         public static List<Pair> GetPairs() => Current?.Pairs.ToList() ??
-            Utils.PairUtils.GetPairs(Utils.ConfigUtils.IsoPairIndex.Value);
+            Utils.PairUtils.GetPairs(Utils.ConfigUtils.IsoPairName.Value);
     }
 }

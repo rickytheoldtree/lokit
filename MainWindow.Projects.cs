@@ -28,12 +28,14 @@ namespace Lokit
                 if (!await ResolveProjectEditsAsync("创建项目")) return;
                 var folderDialog = new OpenFolderDialog { Title = "选择正式语言文件目录（也可以是空目录）" };
                 if (folderDialog.ShowDialog(this) != true) return;
+                //用户可能刚在 iso 文件夹里改过语言表
+                RefreshIsoTables();
                 var rules = new ComboBox
                 {
-                    ItemsSource = PairUtils.PairsCache,
-                    DisplayMemberPath = "Key",
+                    ItemsSource = PairUtils.Tables,
+                    DisplayMemberPath = "Name",
                     Style = (Style)FindResource("StandardComboBoxStyle"),
-                    SelectedIndex = Math.Clamp(ConfigUtils.IsoPairIndex.Value, 0, Math.Max(0, PairUtils.PairsCache.Count - 1)),
+                    SelectedItem = PairUtils.ResolveTable(ConfigUtils.IsoPairName.Value),
                 };
                 var source = new ComboBox { Style = (Style)FindResource("StandardComboBoxStyle") };
                 var format = new ComboBox
@@ -44,10 +46,11 @@ namespace Lokit
                     SelectedItem = new DictConverterType(ConfigUtils.DictConverter.Value),
                 };
                 if (format.SelectedIndex < 0) format.SelectedIndex = 0;
+                List<Pair> SelectedPairs() => (rules.SelectedItem as PairTable)?.Pairs ?? PairUtils.GetPairs(null);
                 var hint = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = .68, Margin = new Thickness(0, 12, 0, 0) };
                 void RefreshRules()
                 {
-                    var pairs = PairUtils.GetPairs(rules.SelectedIndex);
+                    var pairs = SelectedPairs();
                     source.ItemsSource = pairs;
                     source.SelectedIndex = 0;
                     var matched = pairs.Count(p => File.Exists(Path.Combine(folderDialog.FolderName, p.Name + ".json")));
@@ -81,7 +84,7 @@ namespace Lokit
                 };
                 if (save.ShowDialog(this) != true) return;
                 SetProject(ProjectWorkspace.Create(save.FileName, folderDialog.FolderName,
-                    PairUtils.GetPairs(rules.SelectedIndex), sourcePair.Name, converter.type!));
+                    SelectedPairs(), sourcePair.Name, converter.type!));
                 ShowSnackbar("项目已创建", "新增和编辑保存到工作副本，发布时才写回正式目录。", ControlAppearance.Success, SymbolRegular.CheckmarkCircle24);
             }
             catch (Exception error) { ShowInfoBar("创建项目失败", error.Message, InfoBarSeverity.Error); }
